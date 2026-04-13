@@ -1,14 +1,16 @@
 async function getCurrentUser() {
-  const { data, error } = await supabase.auth.getUser();
+  const { data, error } = await window.supabaseClient.auth.getUser();
+
   if (error) {
     console.error(error);
     return null;
   }
+
   return data.user;
 }
 
 async function getProfile(userId) {
-  const { data, error } = await supabase
+  const { data, error } = await window.supabaseClient
     .from("profiles")
     .select("*")
     .eq("id", userId)
