@@ -13,14 +13,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   logoutBtn.addEventListener("click", async () => {
-    await supabase.auth.signOut();
+    await window.supabaseClient.auth.signOut();
     window.location.href = "index.html";
   });
 
   async function loadUsers() {
     userList.innerHTML = "Loading users...";
 
-    const { data, error } = await supabase
+    const { data, error } = await window.supabaseClient
       .from("profiles")
       .select("*")
       .order("created_at", { ascending: false });
@@ -69,7 +69,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const id = btn.dataset.id;
         const currentApproved = btn.dataset.approved === "true";
 
-        const { error } = await supabase
+        const { error } = await window.supabaseClient
           .from("profiles")
           .update({ approved: !currentApproved })
           .eq("id", id);
@@ -90,7 +90,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const currentRole = btn.dataset.role;
         const newRole = currentRole === "admin" ? "member" : "admin";
 
-        const { error } = await supabase
+        const { error } = await window.supabaseClient
           .from("profiles")
           .update({ role: newRole })
           .eq("id", id);
