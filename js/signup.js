@@ -16,7 +16,7 @@ signupForm.addEventListener("submit", async (e) => {
       return;
     }
 
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await window.supabaseClient.auth.signUp({
       email,
       password,
       options: {
@@ -38,6 +38,6 @@ signupForm.addEventListener("submit", async (e) => {
   } catch (err) {
     console.error("Signup crashed:", err);
     signupMessage.textContent =
-      "Signup failed. Open browser console and check the error.";
+      "Signup failed. Check browser console for details.";
   }
 });
