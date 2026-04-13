@@ -8,7 +8,7 @@ form.addEventListener("submit", async (e) => {
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
 
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await window.supabaseClient.auth.signInWithPassword({
     email,
     password
   });
@@ -20,7 +20,7 @@ form.addEventListener("submit", async (e) => {
 
   const user = data.user;
 
-  const { data: profile, error: profileError } = await supabase
+  const { data: profile, error: profileError } = await window.supabaseClient
     .from("profiles")
     .select("*")
     .eq("id", user.id)
