@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Request Access | Cruise Cunts Hub</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <main class="container center-page">
+    <section class="card auth-card">
+      <h1>Request Access</h1>
+      <p class="subtext">Create your account. An admin will approve you.</p>
+
+      <form id="signup-form" class="form">
+        <label>
+          Display Name
+          <input type="text" id="display_name" required />
+        </label>
+
+        <label>
+          Email
+          <input type="email" id="email" required />
+        </label>
+
+        <label>
+          Password
+          <input type="password" id="password" minlength="8" required />
+        </label>
+
+        <button type="submit" class="btn btn-primary full-width">Create Account</button>
+      </form>
+
+      <p id="message" class="message"></p>
+
+      <div class="auth-links">
+        <a href="login.html">Already have an account?</a>
+        <a href="index.html">Back home</a>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/supabase-client.js"></script>
+  <script src="js/signup.js"></script>
+</body>
+</html>
