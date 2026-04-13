@@ -24,13 +24,13 @@
 
   <script src="js/supabase-client.js"></script>
   <script src="js/auth.js"></script>
-  <script>
-    document.getElementById("logout-btn").addEventListener("click", async () => {
-      await supabase.auth.signOut();
-      window.location.href = "index.html";
-    });
+<script>
+  document.getElementById("logout-btn").addEventListener("click", async () => {
+    await window.supabaseClient.auth.signOut();
+    window.location.href = "index.html";
+  });
 
-    requireAuth(true);
-  </script>
+  requireAuth(true);
+</script>
 </body>
 </html>
