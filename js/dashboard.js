@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   logoutBtn.addEventListener("click", async () => {
-    await supabase.auth.signOut();
+    await window.supabaseClient.auth.signOut();
     window.location.href = "index.html";
   });
 });
