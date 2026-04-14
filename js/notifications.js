@@ -1,10 +1,42 @@
+window.createNotification = async function ({
+  type = "general",
+  title,
+  message,
+  link_url = null,
+  meta = null,
+}) {
+  if (!window.supabaseClient || !title || !message) return;
+
+  try {
+    const payload = {
+      type,
+      title,
+      message,
+      link_url,
+      meta,
+    };
+
+    const { error } = await window.supabaseClient
+      .from("notifications")
+      .insert(payload);
+
+    if (error) {
+      console.error("CREATE NOTIFICATION ERROR:", error);
+    }
+  } catch (err) {
+    console.error("CREATE NOTIFICATION CRASH:", err);
+  }
+};
+
 window.setupNotifications = async function (userId) {
   const bell = document.getElementById("notification-bell");
   const countEl = document.getElementById("notification-count");
   const panel = document.getElementById("notification-panel");
   const list = document.getElementById("notification-list");
 
-  if (!bell || !countEl || !panel || !list || !window.supabaseClient || !userId) return;
+  if (!bell || !countEl || !panel || !list || !window.supabaseClient || !userId) {
+    return;
+  }
 
   async function loadNotifications(markRead = false) {
     const { data: notifications, error } = await window.supabaseClient
@@ -50,11 +82,20 @@ window.setupNotifications = async function (userId) {
     list.innerHTML = notifications
       .map((item) => {
         const date = new Date(item.created_at);
+        const safeTitle = item.title || "Update";
+        const safeMessage = item.message || "";
+        const safeLink = item.link_url
+          ? `<a class="notification-link" href="${item.link_url}">Open</a>`
+          : "";
+
         return `
           <div class="notification-item">
-            <div class="notification-title">${item.title}</div>
-            <div class="notification-message">${item.message}</div>
-            <div class="notification-time">${date.toLocaleString()}</div>
+            <div class="notification-item-top">
+              <strong>${safeTitle}</strong>
+              <span class="small-text">${date.toLocaleString()}</span>
+            </div>
+            <p>${safeMessage}</p>
+            ${safeLink}
           </div>
         `;
       })
@@ -68,7 +109,7 @@ window.setupNotifications = async function (userId) {
 
       const { error: insertError } = await window.supabaseClient
         .from("notification_reads")
-        .insert(rows);
+        .upsert(rows, { onConflict: "notification_id,user_id" });
 
       if (insertError) {
         console.error("MARK READ ERROR:", insertError);
@@ -78,14 +119,21 @@ window.setupNotifications = async function (userId) {
     }
   }
 
-  bell.addEventListener("click", async () => {
+  bell.addEventListener("click", async (e) => {
+    e.stopPropagation();
+
     const isHidden = panel.classList.contains("hidden");
+
     if (isHidden) {
       panel.classList.remove("hidden");
       await loadNotifications(true);
     } else {
       panel.classList.add("hidden");
     }
+  });
+
+  panel.addEventListener("click", (e) => {
+    e.stopPropagation();
   });
 
   document.addEventListener("click", (e) => {
