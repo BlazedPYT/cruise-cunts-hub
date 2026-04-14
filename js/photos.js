@@ -143,51 +143,63 @@ document.addEventListener("DOMContentLoaded", async () => {
     uploadForm.addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      const file = fileInput.files[0];
+      const files = Array.from(fileInput.files || []);
       const caption = captionInput.value.trim();
 
-      if (!file) {
-        messageEl.textContent = "Pick a photo first.";
+      if (files.length === 0) {
+        messageEl.textContent = "Pick at least one photo first.";
         return;
       }
 
-      messageEl.textContent = "Uploading photo...";
+      messageEl.textContent = `Uploading ${files.length} photo${files.length > 1 ? "s" : ""}...`;
 
-      const fileExt = file.name.split(".").pop();
-      const safeExt = fileExt ? fileExt.toLowerCase() : "jpg";
-      const fileName = `${user.id}/${Date.now()}.${safeExt}`;
+      let successCount = 0;
 
-      const { error: uploadError } = await window.supabaseClient
-        .storage
-        .from(BUCKET_NAME)
-        .upload(fileName, file, {
-          upsert: false,
-        });
+      for (const file of files) {
+        const fileExt = file.name.split(".").pop();
+        const safeExt = fileExt ? fileExt.toLowerCase() : "jpg";
+        const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${safeExt}`;
 
-      if (uploadError) {
-        console.error("UPLOAD ERROR:", uploadError);
-        messageEl.textContent = uploadError.message || "Could not upload photo.";
-        return;
-      }
+        const { error: uploadError } = await window.supabaseClient
+          .storage
+          .from(BUCKET_NAME)
+          .upload(fileName, file, {
+            upsert: false,
+          });
 
-      const { error: insertError } = await window.supabaseClient
-        .from("trip_photos")
-        .insert({
-          trip_slug: TRIP_SLUG,
-          trip_name: TRIP_NAME,
-          uploaded_by: user.id,
-          image_path: fileName,
-          caption,
-        });
+        if (uploadError) {
+          console.error("UPLOAD ERROR:", uploadError);
+          continue;
+        }
 
-      if (insertError) {
-        console.error("INSERT PHOTO ERROR:", insertError);
-        messageEl.textContent = insertError.message || "Photo saved badly.";
-        return;
+        const { error: insertError } = await window.supabaseClient
+          .from("trip_photos")
+          .insert({
+            trip_slug: TRIP_SLUG,
+            trip_name: TRIP_NAME,
+            uploaded_by: user.id,
+            image_path: fileName,
+            caption,
+          });
+
+        if (insertError) {
+          console.error("INSERT PHOTO ERROR:", insertError);
+          continue;
+        }
+
+        successCount += 1;
       }
 
       uploadForm.reset();
-      messageEl.textContent = "Photo uploaded!";
+
+      if (successCount === files.length) {
+        messageEl.textContent = `${successCount} photo${successCount > 1 ? "s" : ""} uploaded!`;
+      } else if (successCount > 0) {
+        messageEl.textContent = `${successCount} of ${files.length} photo${files.length > 1 ? "s" : ""} uploaded.`;
+      } else {
+        messageEl.textContent = "None of the photos uploaded successfully.";
+      }
+
       loadPhotos();
     });
   }
