@@ -8,33 +8,47 @@ form.addEventListener("submit", async (e) => {
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
 
-  const { data, error } = await window.supabaseClient.auth.signInWithPassword({
-    email,
-    password
-  });
+  try {
+    const { data, error } = await window.supabaseClient.auth.signInWithPassword({
+      email,
+      password
+    });
 
-  if (error) {
-    message.textContent = error.message;
-    return;
+    if (error) {
+      message.textContent = error.message;
+      console.error("LOGIN ERROR:", error);
+      return;
+    }
+
+    const user = data.user;
+
+    const { data: profile, error: profileError } = await window.supabaseClient
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single();
+
+    console.log("LOGGED IN USER:", user);
+    console.log("PROFILE RESULT:", profile, profileError);
+
+    if (profileError) {
+      message.textContent = `Profile error: ${profileError.message}`;
+      return;
+    }
+
+    if (!profile) {
+      message.textContent = "No profile row found for this account.";
+      return;
+    }
+
+    if (!profile.approved) {
+      window.location.href = "pending.html";
+      return;
+    }
+
+    window.location.href = "dashboard.html";
+  } catch (err) {
+    console.error("LOGIN CRASH:", err);
+    message.textContent = "Login crashed. Check browser console.";
   }
-
-  const user = data.user;
-
-  const { data: profile, error: profileError } = await window.supabaseClient
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
-
-  if (profileError || !profile) {
-    message.textContent = "Could not load your profile.";
-    return;
-  }
-
-  if (!profile.approved) {
-    window.location.href = "pending.html";
-    return;
-  }
-
-  window.location.href = "dashboard.html";
 });
