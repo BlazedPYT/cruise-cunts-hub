@@ -26,9 +26,25 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   membersMessage.textContent = "Loading members...";
 
+  const user = session.user;
+
+  const { data: myProfile, error: myProfileError } = await window.supabaseClient
+    .from("profiles")
+    .select("id, role, approved")
+    .eq("id", user.id)
+    .single();
+
+  if (myProfileError || !myProfile || !myProfile.approved) {
+    console.error("PROFILE LOAD ERROR:", myProfileError);
+    window.location.href = "login.html";
+    return;
+  }
+
+  const isAdmin = myProfile.role === "admin";
+
   const { data: members, error } = await window.supabaseClient
     .from("profiles")
-    .select("id, display_name, email, avatar_url, cruise_status, room_number, bio, ships_sailed, favorite_ship, instagram, hometown")
+    .select("id, display_name, email, avatar_url, cruise_status, room_number, bio, ships_sailed, favorite_ship, instagram, hometown, approved")
     .eq("approved", true)
     .order("display_name", { ascending: true });
 
@@ -48,8 +64,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   membersGrid.innerHTML = members
     .map((member) => {
       const avatar = member.avatar_url && member.avatar_url.trim() !== ""
-        ? member.avatar_url
-        : "https://placehold.co/300x300?text=Cruise+Cunt";
+        ? `<img class="member-avatar" src="${member.avatar_url}" alt="${member.display_name || "Member"}" />`
+        : `<div class="member-avatar member-avatar-empty">No Photo Yet</div>`;
 
       const ships = member.ships_sailed
         ? member.ships_sailed
@@ -60,9 +76,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             .join("")
         : `<span class="tag">No ships added yet</span>`;
 
+      const adminButton = isAdmin
+        ? `<div class="button-row" style="margin-top: 1rem;">
+             <a class="btn btn-secondary" href="admin-edit-member.html?id=${member.id}">Edit Member</a>
+           </div>`
+        : "";
+
       return `
         <article class="member-card">
-          <img class="member-avatar" src="${avatar}" alt="${member.display_name || "Member"}" />
+          ${avatar}
           <div class="member-content">
             <h3>${member.display_name || "Unnamed Member"}</h3>
             <p class="member-status"><strong>Status:</strong> ${member.cruise_status || "interested"}</p>
@@ -71,10 +93,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             <p><strong>Hometown:</strong> ${member.hometown || "Not added yet"}</p>
             <p><strong>Bio:</strong> ${member.bio || "No bio yet."}</p>
             <p><strong>Instagram:</strong> ${member.instagram || "Not added yet"}</p>
-
             <div class="tag-row">
               ${ships}
             </div>
+            ${adminButton}
           </div>
         </article>
       `;
