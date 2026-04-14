@@ -104,7 +104,19 @@ document.addEventListener("DOMContentLoaded", async () => {
                   <div class="member-content">
                     <span class="pill">${excursion.day_label || "Port Day"}</span>
                     <h3>${excursion.excursion_name}</h3>
-                    <p><strong>Price:</strong> ${excursion.price_adult ? `$${Number(excursion.price_adult).toFixed(2)} adult` : "Check listing"}</p>
+<p>
+  <strong>Price:</strong>
+  ${
+    excursion.price_adult
+      ? `$${Number(excursion.price_adult).toFixed(2)} adult`
+      : "Check listing"
+  }
+  ${
+    excursion.price_child
+      ? ` / $${Number(excursion.price_child).toFixed(2)} child`
+      : ""
+  }
+</p>
                     <p><strong>Duration:</strong> ${excursion.duration_text || "Not listed"}</p>
                     <p><strong>Activity Level:</strong> ${excursion.activity_level || "Not listed"}</p>
                     <p><strong>Details:</strong> ${excursion.details || "No details added yet."}</p>
