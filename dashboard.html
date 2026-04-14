@@ -1,167 +1,81 @@
-document.addEventListener("DOMContentLoaded", async () => {
-  const bookedAlreadyEl = document.getElementById("booked-already");
-  const welcomeTitle = document.getElementById("welcome-title");
-  const logoutBtn = document.getElementById("logout-btn");
-  const adminLink = document.getElementById("admin-link");
-  const dashboardExcursionsList = document.getElementById("dashboard-excursions-list");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard | Cruise Cunts Hub</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div>
+        <h2 class="site-title">Cruise Cunts Hub</h2>
+        <p class="small-text">Private group dashboard</p>
+      </div>
+      <div class="button-row">
+        <a id="admin-link" href="admin.html" class="btn btn-secondary hidden">Admin</a>
+        <button id="logout-btn" class="btn btn-primary">Log Out</button>
+      </div>
+    </div>
+  </header>
 
-  try {
-    if (!window.supabaseClient) {
-      window.location.href = "login.html";
-      return;
-    }
+  <main class="container page-space">
+    <section class="card">
+      <h1 id="welcome-title">Welcome</h1>
+      <p class="lead">
+        Here’s the current booked cruise for the group.
+      </p>
+    </section>
 
-    const {
-      data: { session },
-      error: sessionError,
-    } = await window.supabaseClient.auth.getSession();
+    <section class="grid-two">
+      <article class="card cruise-card featured-booked" style="max-width: 820px; margin: 0 auto; text-align: center;">
+        <span class="pill">🔥 Current Booked</span>
+        <h2>Current Cruise</h2>
+        <p><strong>Line:</strong> Norwegian Cruise Line</p>
+        <p><strong>Ship:</strong> Norwegian Jewel</p>
+        <p><strong>Embarkation:</strong> Miami, Florida</p>
+        <p><strong>Room:</strong> Inside Stateroom</p>
+        <p><strong>Booked Total:</strong> $3,288.00 for 2</p>
+        <p><strong>Booked Already:</strong> <span id="booked-already">Loading...</span></p>
+        <p><strong>Notes:</strong> Confirmed sailing with itinerary details, ship info, restaurant guide, bars, official deck plans, and port links.</p>
 
-    if (sessionError) {
-      console.error("SESSION ERROR:", sessionError);
-      if (bookedAlreadyEl) bookedAlreadyEl.textContent = "Session error";
-      return;
-    }
+        <h3 style="margin-top: 1.5rem;">Itinerary</h3>
+        <ul class="itinerary" style="list-style: none; padding: 0; margin: 1rem 0 0; text-align: center;">
+          <li><strong>Tue:</strong> Miami</li>
+          <li><strong>Wed:</strong> Great Stirrup Cay</li>
+          <li><strong>Thu:</strong> At Sea</li>
+          <li><strong>Fri:</strong> Cabo Rojo</li>
+          <li><strong>Sat:</strong> Oranjestad, Aruba</li>
+          <li><strong>Sun:</strong> Willemstad, Curaçao</li>
+          <li><strong>Mon:</strong> At Sea</li>
+          <li><strong>Tue:</strong> Falmouth, Jamaica</li>
+          <li><strong>Wed:</strong> George Town, Grand Cayman</li>
+          <li><strong>Thu:</strong> At Sea</li>
+          <li><strong>Fri:</strong> Miami</li>
+        </ul>
 
-    if (!session) {
-      window.location.href = "login.html";
-      return;
-    }
+        <div class="button-row" style="margin-top: 1.5rem; justify-content: center; flex-wrap: wrap;">
+          <a class="btn btn-secondary" href="excursions.html">Excursions</a>
+          <a class="btn btn-secondary" href="members.html">View Members</a>
+          <a class="btn btn-secondary" href="profile.html">Edit My Profile</a>
+          <a class="btn btn-primary" href="current-booked.html">Open Full Trip Page</a>
+        </div>
+      </article>
+    </section>
 
-    const user = session.user;
+    <section class="card" style="max-width: 820px; margin: 1.5rem auto 0;">
+      <h2>Excursions Booked So Far</h2>
+      <p class="small-text">Quick glance at who has booked what.</p>
+      <div id="dashboard-excursions-list" class="dashboard-mini-list">
+        <p class="small-text">Loading excursions...</p>
+      </div>
+    </section>
+  </main>
 
-    if (logoutBtn) {
-      logoutBtn.addEventListener("click", async () => {
-        await window.supabaseClient.auth.signOut();
-        window.location.href = "login.html";
-      });
-    }
-
-    const { data: myProfile, error: myProfileError } = await window.supabaseClient
-      .from("profiles")
-      .select("id, display_name, email, approved, role")
-      .eq("id", user.id)
-      .single();
-
-    if (myProfileError) {
-      console.error("MY PROFILE ERROR:", myProfileError);
-      if (bookedAlreadyEl) bookedAlreadyEl.textContent = "Profile error";
-      return;
-    }
-
-    if (!myProfile) {
-      if (bookedAlreadyEl) bookedAlreadyEl.textContent = "No profile found";
-      return;
-    }
-
-    if (!myProfile.approved) {
-      window.location.href = "pending.html";
-      return;
-    }
-
-    if (welcomeTitle) {
-      welcomeTitle.textContent = `Welcome, ${myProfile.display_name || myProfile.email || "Member"}`;
-    }
-
-    if (adminLink && myProfile.role === "admin") {
-      adminLink.classList.remove("hidden");
-    }
-
-    if (bookedAlreadyEl) {
-      bookedAlreadyEl.textContent = "Checking booked members...";
-    }
-
-    const { data: bookedMembers, error: bookedError } = await window.supabaseClient
-      .from("profiles")
-      .select("display_name, email")
-      .eq("approved", true)
-      .eq("cruise_status", "booked");
-
-    if (bookedError) {
-      console.error("BOOKED MEMBERS ERROR:", bookedError);
-      if (bookedAlreadyEl) bookedAlreadyEl.textContent = "Could not load booked members";
-    } else if (!bookedMembers || bookedMembers.length === 0) {
-      if (bookedAlreadyEl) bookedAlreadyEl.textContent = "Nobody yet";
-    } else {
-      const names = bookedMembers.map((member) => {
-        if (member.display_name && member.display_name.trim() !== "") {
-          return member.display_name.trim();
-        }
-        return member.email || "Unnamed Member";
-      });
-
-      if (bookedAlreadyEl) {
-        bookedAlreadyEl.textContent = names.join(", ");
-      }
-    }
-
-    if (dashboardExcursionsList) {
-      dashboardExcursionsList.innerHTML = `<p class="small-text">Loading excursions...</p>`;
-    }
-
-    const { data: excursionRows, error: excursionError } = await window.supabaseClient
-      .from("member_excursions")
-      .select(`
-        id,
-        booked,
-        booked_time,
-        notes,
-        excursions!member_excursions_excursion_id_fkey (
-          excursion_name,
-          port_name
-        ),
-        profiles!member_excursions_user_id_fkey (
-          display_name,
-          email
-        )
-      `)
-      .eq("booked", true);
-
-    console.log("DASHBOARD EXCURSION ROWS:", excursionRows);
-    console.log("DASHBOARD EXCURSION ERROR:", excursionError);
-
-    if (excursionError) {
-      console.error("DASHBOARD EXCURSIONS ERROR:", excursionError);
-      if (dashboardExcursionsList) {
-        dashboardExcursionsList.innerHTML = `<p class="small-text">Could not load excursion activity.</p>`;
-      }
-      return;
-    }
-
-    if (!excursionRows || excursionRows.length === 0) {
-      if (dashboardExcursionsList) {
-        dashboardExcursionsList.innerHTML = `<p class="small-text">No excursions marked yet.</p>`;
-      }
-      return;
-    }
-
-    const sortedRows = excursionRows.sort((a, b) => {
-      const nameA = (a.profiles?.display_name || a.profiles?.email || "").toLowerCase();
-      const nameB = (b.profiles?.display_name || b.profiles?.email || "").toLowerCase();
-      return nameA.localeCompare(nameB);
-    });
-
-    if (dashboardExcursionsList) {
-      dashboardExcursionsList.innerHTML = sortedRows
-        .map((row) => {
-          const person = row.profiles?.display_name || row.profiles?.email || "Member";
-          const excursion = row.excursions?.excursion_name || "Excursion";
-          const port = row.excursions?.port_name || "";
-          const time = row.booked_time ? ` — ${row.booked_time}` : "";
-
-          return `
-            <div class="dashboard-mini-item">
-              <strong>${person}</strong> — ${excursion}${time}
-              <div class="small-text">${port}</div>
-            </div>
-          `;
-        })
-        .join("");
-    }
-  } catch (err) {
-    console.error("DASHBOARD CRASH:", err);
-    if (bookedAlreadyEl) bookedAlreadyEl.textContent = "Dashboard error";
-    if (dashboardExcursionsList) {
-      dashboardExcursionsList.innerHTML = `<p class="small-text">Dashboard error loading excursions.</p>`;
-    }
-  }
-});
+  <script src="js/supabase-client.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
