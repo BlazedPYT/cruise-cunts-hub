@@ -13,7 +13,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
+  const user = session.user;
   const logoutBtn = document.getElementById("logout-btn");
+  const membersGrid = document.getElementById("members-grid");
+  const membersMessage = document.getElementById("members-message");
+
+  if (typeof window.setupNotifications === "function") {
+    await window.setupNotifications(user.id);
+  }
+
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async () => {
       await window.supabaseClient.auth.signOut();
@@ -21,12 +29,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  const membersGrid = document.getElementById("members-grid");
-  const membersMessage = document.getElementById("members-message");
-
   membersMessage.textContent = "Loading members...";
-
-  const user = session.user;
 
   const { data: myProfile, error: myProfileError } = await window.supabaseClient
     .from("profiles")
@@ -50,7 +53,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (error) {
     membersMessage.textContent = "Could not load members.";
-    console.error(error);
+    console.error("MEMBERS LOAD ERROR:", error);
     return;
   }
 
@@ -63,40 +66,39 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   membersGrid.innerHTML = members
     .map((member) => {
-      const avatar = member.avatar_url && member.avatar_url.trim() !== ""
-        ? `<img class="member-avatar" src="${member.avatar_url}" alt="${member.display_name || "Member"}" />`
-        : `<div class="member-avatar member-avatar-empty">No Photo Yet</div>`;
+      const avatar =
+        member.avatar_url && member.avatar_url.trim() !== ""
+          ? `<img class="member-avatar" src="${member.avatar_url}" alt="${member.display_name || "Member"}" />`
+          : `<div class="member-avatar member-avatar-empty">No Photo Yet</div>`;
 
       const ships = member.ships_sailed
         ? member.ships_sailed
             .split(",")
             .map((ship) => ship.trim())
             .filter(Boolean)
-            .map((ship) => `<span class="tag">${ship}</span>`)
+            .map((ship) => `<span class="ship-pill">${ship}</span>`)
             .join("")
-        : `<span class="tag">No ships added yet</span>`;
+        : `<span class="small-text">No ships added yet</span>`;
 
       const adminButton = isAdmin
-        ? `<div class="button-row" style="margin-top: 1rem;">
-             <a class="btn btn-secondary" href="admin-edit-member.html?id=${member.id}">Edit Member</a>
-           </div>`
+        ? `<a class="btn btn-secondary" href="profile.html?user=${member.id}">Edit Member</a>`
         : "";
 
       return `
         <article class="member-card">
           ${avatar}
-          <div class="member-content">
+          <div class="member-card-body">
             <h3>${member.display_name || "Unnamed Member"}</h3>
-            <p class="member-status"><strong>Status:</strong> ${member.cruise_status || "interested"}</p>
+            <p><strong>Status:</strong> ${member.cruise_status || "interested"}</p>
             <p><strong>Room:</strong> ${member.room_number || "Not added yet"}</p>
             <p><strong>Favorite Ship:</strong> ${member.favorite_ship || "Not added yet"}</p>
             <p><strong>Hometown:</strong> ${member.hometown || "Not added yet"}</p>
             <p><strong>Bio:</strong> ${member.bio || "No bio yet."}</p>
             <p><strong>Instagram:</strong> ${member.instagram || "Not added yet"}</p>
-            <div class="tag-row">
-              ${ships}
+            <div class="ship-pill-row">${ships}</div>
+            <div class="button-row" style="margin-top: 1rem;">
+              ${adminButton}
             </div>
-            ${adminButton}
           </div>
         </article>
       `;
