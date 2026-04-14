@@ -6,6 +6,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const userList = document.getElementById("user-list");
   const adminMessage = document.getElementById("admin-message");
   const logoutBtn = document.getElementById("logout-btn");
+  const createMemberForm = document.getElementById("create-member-form");
+  const createMemberMessage = document.getElementById("create-member-message");
 
   if (profile.role !== "admin") {
     window.location.href = "dashboard.html";
@@ -103,6 +105,56 @@ document.addEventListener("DOMContentLoaded", async () => {
         adminMessage.textContent = "Role updated.";
         loadUsers();
       });
+    });
+  }
+
+  if (createMemberForm) {
+    createMemberForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      createMemberMessage.textContent = "Creating account...";
+
+      const display_name = document.getElementById("new-member-name").value.trim();
+      const email = document.getElementById("new-member-email").value.trim();
+      const password = document.getElementById("new-member-password").value.trim();
+
+      try {
+        const {
+          data: { session },
+        } = await window.supabaseClient.auth.getSession();
+
+        if (!session) {
+          createMemberMessage.textContent = "You must be logged in.";
+          return;
+        }
+
+        const response = await fetch("https://YOUR_PROJECT_REF.supabase.co/functions/v1/create-member", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            display_name,
+            email,
+            password,
+          }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          createMemberMessage.textContent = result.error || "Could not create account.";
+          return;
+        }
+
+        createMemberMessage.textContent = `Account created for ${email}.`;
+        createMemberForm.reset();
+        loadUsers();
+      } catch (err) {
+        console.error("CREATE MEMBER ERROR:", err);
+        createMemberMessage.textContent = "Something went wrong creating the account.";
+      }
     });
   }
 
