@@ -82,7 +82,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     const groupedSelections = {};
 
     (selections || []).forEach((row) => {
-      if (!groupedSelections[row.excursion_id]) groupedSelections[row.excursion_id] = [];
+      if (!groupedSelections[row.excursion_id]) {
+        groupedSelections[row.excursion_id] = [];
+      }
+
       groupedSelections[row.excursion_id].push(row);
 
       if (row.user_id === user.id) {
@@ -92,7 +95,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const groupedByPort = {};
     (excursions || []).forEach((excursion) => {
-      if (!groupedByPort[excursion.port_name]) groupedByPort[excursion.port_name] = [];
+      if (!groupedByPort[excursion.port_name]) {
+        groupedByPort[excursion.port_name] = [];
+      }
+
       groupedByPort[excursion.port_name].push(excursion);
     });
 
@@ -107,14 +113,16 @@ document.addEventListener("DOMContentLoaded", async () => {
               <article class="card excursion-card" data-excursion-id="${excursion.id}">
                 <span class="pill">${excursion.day_label || "Port Day"}</span>
                 <h3>${excursion.excursion_name}</h3>
-                <p><strong>Price:</strong> ${
+
+                <p class="excursion-meta"><strong>Price:</strong> ${
                   excursion.price_adult
                     ? `$${Number(excursion.price_adult).toFixed(2)} adult`
                     : "Check listing"
                 }${excursion.price_child ? ` / $${Number(excursion.price_child).toFixed(2)} child` : ""}</p>
-                <p><strong>Duration:</strong> ${excursion.duration_text || "Not listed"}</p>
-                <p><strong>Activity Level:</strong> ${excursion.activity_level || "Not listed"}</p>
-                <p><strong>Details:</strong> ${excursion.details || "No details added yet."}</p>
+
+                <p class="excursion-meta"><strong>Duration:</strong> ${excursion.duration_text || "Not listed"}</p>
+                <p class="excursion-meta"><strong>Activity Level:</strong> ${excursion.activity_level || "Not listed"}</p>
+                <p class="excursion-meta"><strong>Details:</strong> ${excursion.details || "No details added yet."}</p>
 
                 <div class="excursion-booking-box">
                   <label class="checkbox-row">
@@ -131,7 +139,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                   />
 
                   <label>Notes</label>
-                  <textarea class="excursion-notes-input" rows="3" placeholder="Meeting at the pier, beach day, tequila plans...">${mine?.notes || ""}</textarea>
+                  <textarea
+                    class="excursion-notes-input"
+                    rows="3"
+                    placeholder="Meeting at the pier, beach day, tequila plans..."
+                  >${mine?.notes || ""}</textarea>
 
                   <div class="button-row" style="margin-top: 1rem;">
                     <button type="button" class="btn btn-primary save-excursion-btn">Save</button>
@@ -148,6 +160,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                               entry.profiles?.display_name ||
                               entry.profiles?.email ||
                               "Member";
+
                             const time = entry.booked_time ? ` — ${entry.booked_time}` : "";
                             const notes = entry.notes
                               ? `<div class="small-text">${entry.notes}</div>`
@@ -172,7 +185,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         return `
           <section class="card">
             <h2>${portName}</h2>
-            <div class="excursions-grid">
+            <div class="excursion-grid">
               ${excursionCards}
             </div>
           </section>
