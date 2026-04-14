@@ -10,6 +10,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   const captionInput = document.getElementById("photo-caption");
   const photosGrid = document.getElementById("trip-photos-grid");
 
+  const lightbox = document.getElementById("photo-lightbox");
+  const lightboxImg = document.getElementById("photo-lightbox-img");
+  const lightboxCaption = document.getElementById("photo-lightbox-caption");
+  const lightboxClose = document.getElementById("photo-lightbox-close");
+  const lightboxX = document.getElementById("photo-lightbox-x");
+
   const TRIP_SLUG = "western-caribbean-apr-2026";
   const TRIP_NAME = "April 4–11, 2026 — 7 Day Western Caribbean Cruise";
   const BUCKET_NAME = "trip-photos";
@@ -20,6 +26,36 @@ document.addEventListener("DOMContentLoaded", async () => {
       window.location.href = "index.html";
     });
   }
+
+  function openLightbox(imageUrl, captionText = "") {
+    if (!lightbox || !lightboxImg) return;
+    lightboxImg.src = imageUrl;
+    lightboxCaption.textContent = captionText || "";
+    lightbox.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeLightbox() {
+    if (!lightbox || !lightboxImg) return;
+    lightbox.classList.add("hidden");
+    lightboxImg.src = "";
+    lightboxCaption.textContent = "";
+    document.body.style.overflow = "";
+  }
+
+  if (lightboxClose) {
+    lightboxClose.addEventListener("click", closeLightbox);
+  }
+
+  if (lightboxX) {
+    lightboxX.addEventListener("click", closeLightbox);
+  }
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      closeLightbox();
+    }
+  });
 
   async function loadPhotos() {
     photosGrid.innerHTML = `<p class="small-text">Loading photos...</p>`;
@@ -79,11 +115,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         const canDelete =
           photo.uploaded_by === user.id || profile.role === "admin";
 
+        const safeCaption = (photo.caption || "").replace(/"/g, "&quot;");
+
         return `
           <article class="photo-card">
-            <a href="${signedData.signedUrl}" target="_blank" rel="noopener noreferrer">
+            <button
+              type="button"
+              class="photo-open-btn"
+              data-url="${signedData.signedUrl}"
+              data-caption="${safeCaption}"
+            >
               <img src="${signedData.signedUrl}" alt="Trip photo" class="trip-photo-img" />
-            </a>
+            </button>
+
             <div class="photo-card-body">
               <p class="photo-caption">${photo.caption || "No caption"}</p>
               <p class="small-text">Uploaded by ${uploader}</p>
@@ -102,6 +146,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     );
 
     photosGrid.innerHTML = cards.join("");
+
+    document.querySelectorAll(".photo-open-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        openLightbox(btn.dataset.url, btn.dataset.caption || "");
+      });
+    });
 
     document.querySelectorAll(".delete-photo-btn").forEach((btn) => {
       btn.addEventListener("click", async () => {
@@ -153,51 +203,54 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       messageEl.textContent = `Uploading ${files.length} photo${files.length > 1 ? "s" : ""}...`;
 
-      let successCount = 0;
+      const uploadResults = await Promise.all(
+        files.map(async (file, index) => {
+          const fileExt = file.name.split(".").pop();
+          const safeExt = fileExt ? fileExt.toLowerCase() : "jpg";
+          const fileName = `${user.id}/${Date.now()}-${index}-${Math.random().toString(36).slice(2, 10)}.${safeExt}`;
 
-      for (const file of files) {
-        const fileExt = file.name.split(".").pop();
-        const safeExt = fileExt ? fileExt.toLowerCase() : "jpg";
-        const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${safeExt}`;
+          const { error: uploadError } = await window.supabaseClient
+            .storage
+            .from(BUCKET_NAME)
+            .upload(fileName, file, {
+              upsert: false,
+            });
 
-        const { error: uploadError } = await window.supabaseClient
-          .storage
-          .from(BUCKET_NAME)
-          .upload(fileName, file, {
-            upsert: false,
-          });
+          if (uploadError) {
+            console.error("UPLOAD ERROR:", file.name, uploadError);
+            return { success: false, step: "upload", file: file.name, error: uploadError };
+          }
 
-        if (uploadError) {
-          console.error("UPLOAD ERROR:", uploadError);
-          continue;
-        }
+          const { error: insertError } = await window.supabaseClient
+            .from("trip_photos")
+            .insert({
+              trip_slug: TRIP_SLUG,
+              trip_name: TRIP_NAME,
+              uploaded_by: user.id,
+              image_path: fileName,
+              caption,
+            });
 
-        const { error: insertError } = await window.supabaseClient
-          .from("trip_photos")
-          .insert({
-            trip_slug: TRIP_SLUG,
-            trip_name: TRIP_NAME,
-            uploaded_by: user.id,
-            image_path: fileName,
-            caption,
-          });
+          if (insertError) {
+            console.error("INSERT PHOTO ERROR:", file.name, insertError);
+            return { success: false, step: "insert", file: file.name, error: insertError };
+          }
 
-        if (insertError) {
-          console.error("INSERT PHOTO ERROR:", insertError);
-          continue;
-        }
+          return { success: true, file: file.name };
+        })
+      );
 
-        successCount += 1;
-      }
+      const successCount = uploadResults.filter((r) => r.success).length;
+      const failedCount = uploadResults.length - successCount;
 
       uploadForm.reset();
 
-      if (successCount === files.length) {
-        messageEl.textContent = `${successCount} photo${successCount > 1 ? "s" : ""} uploaded!`;
-      } else if (successCount > 0) {
-        messageEl.textContent = `${successCount} of ${files.length} photo${files.length > 1 ? "s" : ""} uploaded.`;
+      if (successCount > 0 && failedCount === 0) {
+        messageEl.textContent = `${successCount} photo${successCount > 1 ? "s" : ""} uploaded successfully.`;
+      } else if (successCount > 0 && failedCount > 0) {
+        messageEl.textContent = `${successCount} uploaded, ${failedCount} failed. Check console for details.`;
       } else {
-        messageEl.textContent = "None of the photos uploaded successfully.";
+        messageEl.textContent = `No photos uploaded. Check console for details.`;
       }
 
       loadPhotos();
