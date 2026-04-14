@@ -3,34 +3,39 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login | Cruise Cunts Hub</title>
+  <title>Log In | Cruise Cunts Hub</title>
   <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-  <main class="auth-page">
-    <div class="auth-card">
+  <main class="container center-page">
+    <section class="card auth-card">
       <h1>Log In</h1>
-      <p>Use your approved member account.</p>
+      <p class="lead">Use your approved member account.</p>
 
-      <form id="login-form">
-        <label for="email">Email</label>
-        <input type="email" id="email" required />
+      <form id="login-form" class="form">
+        <label>
+          Email
+          <input type="email" id="email" placeholder="you@example.com" required />
+        </label>
 
-        <label for="password">Password</label>
-        <input type="password" id="password" required />
+        <label>
+          Password
+          <input type="password" id="password" placeholder="••••••••" required />
+        </label>
 
-        <button type="submit">Log In</button>
-        <p id="message"></p>
+        <button type="submit" class="btn btn-primary full-width">Log In</button>
       </form>
+
+      <p id="message" class="message"></p>
 
       <div class="auth-links">
         <a href="signup.html">Need access?</a>
         <a href="index.html">Back home</a>
       </div>
-    </div>
+    </section>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase-client.js"></script>
   <script src="js/login.js"></script>
 </body>
