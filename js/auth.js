@@ -1,48 +1,50 @@
-async function getCurrentUser() {
-  const { data, error } = await window.supabaseClient.auth.getUser();
+// js/auth.js
 
-  if (error) {
-    console.error(error);
-    return null;
-  }
-
-  return data.user;
-}
-
-async function getProfile(userId) {
-  const { data, error } = await window.supabaseClient
-    .from("profiles")
-    .select("*")
-    .eq("id", userId)
-    .single();
-
-  if (error) {
-    console.error("Profile fetch error:", error);
-    return null;
-  }
-
-  return data;
-}
-
-async function requireAuth(allowPending = false) {
-  const user = await getCurrentUser();
-
-  if (!user) {
+async function requireAuth(redirectToPending = false) {
+  if (!window.supabaseClient) {
     window.location.href = "login.html";
     return null;
   }
 
-  const profile = await getProfile(user.id);
+  const {
+    data: { session },
+    error: sessionError,
+  } = await window.supabaseClient.auth.getSession();
+
+  if (sessionError) {
+    console.error("SESSION ERROR:", sessionError);
+    window.location.href = "login.html";
+    return null;
+  }
+
+  if (!session) {
+    window.location.href = "login.html";
+    return null;
+  }
+
+  const user = session.user;
+
+  const { data: profile, error: profileError } = await window.supabaseClient
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
+
+  if (profileError) {
+    console.error("PROFILE ERROR:", profileError);
+    window.location.href = "login.html";
+    return null;
+  }
 
   if (!profile) {
     window.location.href = "login.html";
     return null;
   }
 
-  if (!allowPending && !profile.approved) {
+  if (redirectToPending && !profile.approved) {
     window.location.href = "pending.html";
     return null;
   }
 
-  return { user, profile };
+  return { user, profile, session };
 }
