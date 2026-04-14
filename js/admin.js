@@ -1,8 +1,10 @@
+// js/admin.js
+
 document.addEventListener("DOMContentLoaded", async () => {
   const authData = await requireAuth(false);
   if (!authData) return;
 
-  const { profile } = authData;
+  const { profile, user } = authData;
   const userList = document.getElementById("user-list");
   const adminMessage = document.getElementById("admin-message");
   const logoutBtn = document.getElementById("logout-btn");
@@ -12,6 +14,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (profile.role !== "admin") {
     window.location.href = "dashboard.html";
     return;
+  }
+
+  if (typeof window.setupNotifications === "function") {
+    await window.setupNotifications(user.id);
   }
 
   if (logoutBtn) {
@@ -42,21 +48,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     userList.innerHTML = "";
 
-    data.forEach((user) => {
+    data.forEach((member) => {
       const item = document.createElement("div");
       item.className = "user-item";
 
       item.innerHTML = `
-        <h3>${user.display_name || "No display name"}</h3>
-        <p class="user-meta"><strong>Email:</strong> ${user.email || "No email"}</p>
-        <p class="user-meta"><strong>Approved:</strong> ${user.approved ? "Yes" : "No"}</p>
-        <p class="user-meta"><strong>Role:</strong> ${user.role || "member"}</p>
+        <h3>${member.display_name || "No display name"}</h3>
+        <p class="user-meta"><strong>Email:</strong> ${member.email || "No email"}</p>
+        <p class="user-meta"><strong>Approved:</strong> ${member.approved ? "Yes" : "No"}</p>
+        <p class="user-meta"><strong>Role:</strong> ${member.role || "member"}</p>
         <div class="user-actions">
-          <button class="btn btn-primary approve-btn" data-id="${user.id}" data-approved="${user.approved}">
-            ${user.approved ? "Unapprove" : "Approve"}
+          <button class="btn btn-primary approve-btn" data-id="${member.id}" data-approved="${member.approved}">
+            ${member.approved ? "Unapprove" : "Approve"}
           </button>
-          <button class="btn btn-secondary role-btn" data-id="${user.id}" data-role="${user.role}">
-            ${user.role === "admin" ? "Make Member" : "Make Admin"}
+          <button class="btn btn-secondary role-btn" data-id="${member.id}" data-role="${member.role || "member"}">
+            ${(member.role || "member") === "admin" ? "Make Member" : "Make Admin"}
           </button>
         </div>
       `;
@@ -92,7 +98,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.querySelectorAll(".role-btn").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const id = btn.dataset.id;
-        const currentRole = btn.dataset.role;
+        const currentRole = btn.dataset.role || "member";
         const newRole = currentRole === "admin" ? "member" : "admin";
 
         const { error } = await window.supabaseClient
@@ -128,22 +134,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       try {
-        const {
-          data: { session },
-          error: sessionError,
-        } = await window.supabaseClient.auth.getSession();
-
-        if (sessionError) {
-          console.error("SESSION ERROR:", sessionError);
-          createMemberMessage.textContent = "Could not verify session.";
-          return;
-        }
-
-        if (!session) {
-          createMemberMessage.textContent = "You must be logged in.";
-          return;
-        }
-
         const { data, error } = await window.supabaseClient.functions.invoke("swift-endpoint", {
           body: {
             display_name,
