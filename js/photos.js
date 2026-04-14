@@ -1,5 +1,3 @@
-// js/photos.js
-
 document.addEventListener("DOMContentLoaded", async () => {
   const authData = await requireAuth(false);
   if (!authData) return;
@@ -30,6 +28,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       await window.supabaseClient.auth.signOut();
       window.location.href = "index.html";
     });
+  }
+
+  function escapeHtml(value) {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 
   function openLightbox(imageUrl, captionText = "") {
@@ -102,7 +109,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (signedError || !signedData?.signedUrl) {
           console.error("SIGNED URL ERROR:", signedError);
-          return `<div class="photo-card"><p class="small-text">Could not load image.</p></div>`;
+          return `<div class="photo-card"><div class="photo-card-body"><p class="small-text">Could not load image.</p></div></div>`;
         }
 
         const uploader = photo.profiles?.display_name || photo.profiles?.email || "Member";
@@ -117,23 +124,25 @@ document.addEventListener("DOMContentLoaded", async () => {
               type="button"
               class="photo-open-btn"
               data-url="${signedData.signedUrl}"
-              data-caption="${safeCaption.replace(/"/g, "&quot;")}"
+              data-caption="${escapeHtml(safeCaption)}"
             >
-              <img class="photo-thumb" src="${signedData.signedUrl}" alt="${captionDisplay}" />
+              <div class="photo-thumb-wrap">
+                <img class="photo-thumb trip-photo-img" src="${signedData.signedUrl}" alt="${escapeHtml(captionDisplay)}" />
+              </div>
             </button>
 
             <div class="photo-card-body">
-              <p class="photo-caption">${captionDisplay}</p>
-              <div class="photo-uploader-badge">Uploaded by ${uploader}</div>
+              <p class="photo-caption">${escapeHtml(captionDisplay)}</p>
+              <div class="photo-badge">Uploaded by ${escapeHtml(uploader)}</div>
 
               ${
                 canEditCaption
                   ? `
-                    <div class="photo-edit-box">
+                    <div class="photo-edit-box" style="margin-top: 0.75rem;">
                       <input
                         type="text"
-                        class="edit-caption-input"
-                        value="${safeCaption.replace(/"/g, "&quot;")}"
+                        class="edit-caption-input photo-caption-input"
+                        value="${escapeHtml(safeCaption)}"
                         maxlength="150"
                         placeholder="Edit caption"
                       />
@@ -145,11 +154,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                   : ""
               }
 
-              <div class="button-row" style="margin-top: 0.75rem; flex-wrap: wrap;">
+              <div class="button-row photo-actions">
                 <a class="btn btn-secondary" href="${signedData.signedUrl}" download>Download</a>
                 ${
                   canDelete
-                    ? `<button type="button" class="btn btn-primary delete-photo-btn" data-id="${photo.id}" data-path="${photo.image_path}">Delete</button>`
+                    ? `<button type="button" class="btn btn-danger delete-photo-btn" data-id="${photo.id}" data-path="${photo.image_path}">Delete</button>`
                     : ""
                 }
               </div>
@@ -186,7 +195,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         messageEl.textContent = "Caption updated.";
-        loadPhotos();
+        await loadPhotos();
       });
     });
 
@@ -219,7 +228,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         messageEl.textContent = "Photo deleted.";
-        loadPhotos();
+        await loadPhotos();
       });
     });
   }
@@ -301,7 +310,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
       }
 
-      loadPhotos();
+      await loadPhotos();
     });
   }
 
