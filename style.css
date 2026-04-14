@@ -850,3 +850,13 @@ textarea:focus {
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   }
 }
+
+.btn-danger {
+  background: #c94b4b;
+  color: #fff;
+  border: none;
+}
+
+.btn-danger:hover {
+  background: #b53f3f;
+}
