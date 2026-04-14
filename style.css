@@ -831,13 +831,6 @@ textarea:focus {
   color: #8a9aae;
 }
 
-@media (min-width: 900px) {
-  #excursions-wrap .card {
-    max-width: 920px;
-    margin: 0 auto;
-  }
-}
-
 @media (max-width: 768px) {
   .topbar-inner {
     flex-direction: column;
