@@ -98,22 +98,22 @@ document.addEventListener("DOMContentLoaded", async () => {
       dashboardExcursionsList.innerHTML = `<p class="small-text">Loading excursions...</p>`;
     }
 
-    const { data: excursionRows, error: excursionError } = await window.supabaseClient
-      .from("member_excursions")
-      .select(`
-        booked,
-        booked_time,
-        notes,
-        excursions (
-          excursion_name,
-          port_name
-        ),
-        profiles (
-          display_name,
-          email
-        )
-      `)
-      .eq("booked", true);
+const { data: excursionRows, error: excursionError } = await window.supabaseClient
+  .from("member_excursions")
+  .select(`
+    booked,
+    booked_time,
+    notes,
+    excursions (
+      excursion_name,
+      port_name
+    ),
+    profiles (
+      display_name,
+      email
+    )
+  `)
+  .eq("booked", true);
 
     if (excursionError) {
       console.error("DASHBOARD EXCURSIONS ERROR:", excursionError);
