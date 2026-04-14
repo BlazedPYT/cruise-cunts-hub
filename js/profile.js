@@ -13,19 +13,46 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  const user = session.user;
+  const currentUser = session.user;
   const form = document.getElementById("profile-form");
   const message = document.getElementById("profile-message");
   const photoPreview = document.getElementById("profile-photo-preview");
   const noPhotoBox = document.getElementById("no-photo-box");
   const avatarFileInput = document.getElementById("avatar_file");
-
   const logoutBtn = document.getElementById("logout-btn");
+
+  if (typeof window.setupNotifications === "function") {
+    await window.setupNotifications(currentUser.id);
+  }
+
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async () => {
       await window.supabaseClient.auth.signOut();
       window.location.href = "login.html";
     });
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const editingUserId = params.get("user") || currentUser.id;
+
+  const { data: currentProfile, error: currentProfileError } = await window.supabaseClient
+    .from("profiles")
+    .select("id, role, approved, display_name, email")
+    .eq("id", currentUser.id)
+    .single();
+
+  if (currentProfileError || !currentProfile || !currentProfile.approved) {
+    console.error("CURRENT PROFILE ERROR:", currentProfileError);
+    window.location.href = "login.html";
+    return;
+  }
+
+  const canEditOtherUser = currentProfile.role === "admin";
+  const isEditingSelf = editingUserId === currentUser.id;
+
+  if (!isEditingSelf && !canEditOtherUser) {
+    window.location.href = "dashboard.html";
+    return;
   }
 
   function setPhoto(url) {
@@ -39,23 +66,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  avatarFileInput.addEventListener("change", () => {
-    const file = avatarFileInput.files[0];
-    if (!file) return;
-
-    const previewUrl = URL.createObjectURL(file);
-    setPhoto(previewUrl);
-  });
+  if (avatarFileInput) {
+    avatarFileInput.addEventListener("change", () => {
+      const file = avatarFileInput.files[0];
+      if (!file) return;
+      const previewUrl = URL.createObjectURL(file);
+      setPhoto(previewUrl);
+    });
+  }
 
   const { data: profile, error } = await window.supabaseClient
     .from("profiles")
     .select("*")
-    .eq("id", user.id)
+    .eq("id", editingUserId)
     .single();
 
-  if (error) {
-    message.textContent = "Could not load your profile.";
-    console.error(error);
+  if (error || !profile) {
+    message.textContent = "Could not load profile.";
+    console.error("LOAD TARGET PROFILE ERROR:", error);
     return;
   }
 
@@ -67,19 +95,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("instagram").value = profile.instagram || "";
   document.getElementById("ships_sailed").value = profile.ships_sailed || "";
   document.getElementById("bio").value = profile.bio || "";
-
   setPhoto(profile.avatar_url || "");
+
+  const originalCruiseStatus = profile.cruise_status || "interested";
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     message.textContent = "Saving profile...";
 
     let avatarUrl = profile.avatar_url || "";
-    const file = avatarFileInput.files[0];
+    const file = avatarFileInput?.files?.[0];
 
     if (file) {
-      const fileExt = file.name.split(".").pop();
-      const filePath = `${user.id}/profile-${Date.now()}.${fileExt}`;
+      const fileExt = file.name.split(".").pop() || "jpg";
+      const filePath = `${editingUserId}/profile-${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await window.supabaseClient.storage
         .from("avatars")
@@ -113,7 +142,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const { error: updateError } = await window.supabaseClient
       .from("profiles")
       .update(updates)
-      .eq("id", user.id);
+      .eq("id", editingUserId);
 
     if (updateError) {
       console.error("PROFILE UPDATE ERROR:", updateError);
@@ -121,7 +150,33 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    message.textContent = "Profile saved.";
+    if (
+      updates.cruise_status === "booked" &&
+      originalCruiseStatus !== "booked" &&
+      typeof window.createNotification === "function"
+    ) {
+      const nameForNotice =
+        updates.display_name ||
+        profile.display_name ||
+        profile.email ||
+        "A member";
+
+      await window.createNotification({
+        type: "cruise_status",
+        title: "New Cruise Booking",
+        message: `${nameForNotice} marked themselves as booked for the current cruise.`,
+        link_url: "members.html",
+        meta: {
+          user_id: editingUserId,
+          cruise_status: "booked",
+        },
+      });
+    }
+
+    message.textContent = isEditingSelf
+      ? "Profile saved."
+      : "Member profile saved.";
+
     setPhoto(avatarUrl);
   });
 });
