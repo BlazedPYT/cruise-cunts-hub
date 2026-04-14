@@ -1,54 +1,37 @@
-const form = document.getElementById("login-form");
-const message = document.getElementById("message");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login | Cruise Cunts Hub</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="auth-page">
+    <div class="auth-card">
+      <h1>Log In</h1>
+      <p>Use your approved member account.</p>
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  message.textContent = "Logging in...";
+      <form id="login-form">
+        <label for="email">Email</label>
+        <input type="email" id="email" required />
 
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
+        <label for="password">Password</label>
+        <input type="password" id="password" required />
 
-  try {
-    const { data, error } = await window.supabaseClient.auth.signInWithPassword({
-      email,
-      password
-    });
+        <button type="submit">Log In</button>
+        <p id="message"></p>
+      </form>
 
-    if (error) {
-      message.textContent = error.message;
-      console.error("LOGIN ERROR:", error);
-      return;
-    }
+      <div class="auth-links">
+        <a href="signup.html">Need access?</a>
+        <a href="index.html">Back home</a>
+      </div>
+    </div>
+  </main>
 
-    const user = data.user;
-
-    const { data: profile, error: profileError } = await window.supabaseClient
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single();
-
-    console.log("LOGGED IN USER:", user);
-    console.log("PROFILE RESULT:", profile, profileError);
-
-    if (profileError) {
-      message.textContent = `Profile error: ${profileError.message}`;
-      return;
-    }
-
-    if (!profile) {
-      message.textContent = "No profile row found for this account.";
-      return;
-    }
-
-    if (!profile.approved) {
-      window.location.href = "pending.html";
-      return;
-    }
-
-    window.location.href = "dashboard.html";
-  } catch (err) {
-    console.error("LOGIN CRASH:", err);
-    message.textContent = "Login crashed. Check browser console.";
-  }
-});
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/login.js"></script>
+</body>
+</html>
