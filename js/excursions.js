@@ -18,6 +18,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   const wrap = document.getElementById("excursions-wrap");
   const logoutBtn = document.getElementById("logout-btn");
 
+  if (typeof window.setupNotifications === "function") {
+    await window.setupNotifications(user.id);
+  }
+
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async () => {
       await window.supabaseClient.auth.signOut();
@@ -29,7 +33,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const { data: myProfile, error: myProfileError } = await window.supabaseClient
     .from("profiles")
-    .select("id, approved")
+    .select("id, approved, display_name, email")
     .eq("id", user.id)
     .single();
 
@@ -38,205 +42,219 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  const { data: excursions, error: excursionsError } = await window.supabaseClient
-    .from("excursions")
-    .select("*")
-    .order("port_name", { ascending: true })
-    .order("sort_order", { ascending: true });
+  async function loadExcursions() {
+    message.textContent = "Loading excursions...";
 
-  if (excursionsError) {
-    console.error(excursionsError);
-    message.textContent = "Could not load excursions.";
-    return;
-  }
+    const { data: excursions, error: excursionsError } = await window.supabaseClient
+      .from("excursions")
+      .select("*")
+      .order("port_name", { ascending: true })
+      .order("sort_order", { ascending: true });
 
-  const { data: selections, error: selectionsError } = await window.supabaseClient
-    .from("member_excursions")
-    .select(`
-      id,
-      user_id,
-      excursion_id,
-      booked,
-      booked_time,
-      notes,
-      profiles!member_excursions_user_id_fkey (
-        display_name,
-        email
-      )
-    `);
-
-  if (selectionsError) {
-    console.error(selectionsError);
-    message.textContent = "Could not load excursion selections.";
-    return;
-  }
-
-  const mySelections = {};
-  const groupedSelections = {};
-
-  selections.forEach((row) => {
-    if (!groupedSelections[row.excursion_id]) groupedSelections[row.excursion_id] = [];
-    groupedSelections[row.excursion_id].push(row);
-
-    if (row.user_id === user.id) {
-      mySelections[row.excursion_id] = row;
+    if (excursionsError) {
+      console.error("EXCURSIONS LOAD ERROR:", excursionsError);
+      message.textContent = "Could not load excursions.";
+      return;
     }
-  });
 
-  const groupedByPort = {};
-  excursions.forEach((excursion) => {
-    if (!groupedByPort[excursion.port_name]) groupedByPort[excursion.port_name] = [];
-    groupedByPort[excursion.port_name].push(excursion);
-  });
+    const { data: selections, error: selectionsError } = await window.supabaseClient
+      .from("member_excursions")
+      .select(`
+        id,
+        user_id,
+        excursion_id,
+        booked,
+        booked_time,
+        notes,
+        profiles!member_excursions_user_id_fkey (
+          display_name,
+          email
+        )
+      `);
 
-  wrap.innerHTML = Object.entries(groupedByPort)
-    .map(([portName, items]) => {
-      return `
-        <section class="card" style="margin-top: 1.5rem;">
-          <h2>${portName}</h2>
-          <div class="members-grid" style="margin-top: 1rem;">
-            ${items.map((excursion) => {
-              const mine = mySelections[excursion.id];
-              const bookedBy = (groupedSelections[excursion.id] || []).filter((x) => x.booked);
+    if (selectionsError) {
+      console.error("SELECTIONS LOAD ERROR:", selectionsError);
+      message.textContent = "Could not load excursion selections.";
+      return;
+    }
 
-              return `
-                <article class="member-card">
-                  <div class="member-content">
-                    <span class="pill">${excursion.day_label || "Port Day"}</span>
-                    <h3>${excursion.excursion_name}</h3>
-<p>
-  <strong>Price:</strong>
-  ${
-    excursion.price_adult
-      ? `$${Number(excursion.price_adult).toFixed(2)} adult`
-      : "Check listing"
-  }
-  ${
-    excursion.price_child
-      ? ` / $${Number(excursion.price_child).toFixed(2)} child`
-      : ""
-  }
-</p>
-                    <p><strong>Duration:</strong> ${excursion.duration_text || "Not listed"}</p>
-                    <p><strong>Activity Level:</strong> ${excursion.activity_level || "Not listed"}</p>
-                    <p><strong>Details:</strong> ${excursion.details || "No details added yet."}</p>
+    const mySelections = {};
+    const groupedSelections = {};
 
-                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #dce8f5;">
-                      <label style="display:block; margin-bottom: 0.5rem;">
-                        <input type="checkbox" class="excursion-booked" data-excursion-id="${excursion.id}" ${mine && mine.booked ? "checked" : ""} />
-                        I booked this
-                      </label>
+    (selections || []).forEach((row) => {
+      if (!groupedSelections[row.excursion_id]) groupedSelections[row.excursion_id] = [];
+      groupedSelections[row.excursion_id].push(row);
 
-                      <label style="display:block; margin-bottom: 0.75rem;">
-                        Time
-                        <input
-                          type="text"
-                          class="excursion-time"
-                          data-excursion-id="${excursion.id}"
-                          placeholder="Example: 10:30 AM"
-                          value="${mine?.booked_time || ""}"
-                        />
-                      </label>
-
-                      <label style="display:block; margin-bottom: 0.75rem;">
-                        Notes
-                        <textarea
-                          class="excursion-notes"
-                          data-excursion-id="${excursion.id}"
-                          rows="3"
-                          placeholder="Optional notes"
-                        >${mine?.notes || ""}</textarea>
-                      </label>
-
-                      <button class="btn btn-primary save-excursion-btn" data-excursion-id="${excursion.id}">
-                        Save
-                      </button>
-                    </div>
-
-                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #dce8f5;">
-                      <h4 style="margin-bottom: 0.75rem;">Booked By</h4>
-                      ${
-                        bookedBy.length
-                          ? bookedBy.map((entry) => {
-                              const name = entry.profiles?.display_name || entry.profiles?.email || "Member";
-                              const time = entry.booked_time ? ` — ${entry.booked_time}` : "";
-                              const notes = entry.notes ? `<div class="small-text" style="margin-top: 0.25rem;">${entry.notes}</div>` : "";
-
-                              return `
-                                <div class="mini-card" style="margin-bottom: 0.5rem;">
-                                  <strong>${name}</strong>${time}
-                                  ${notes}
-                                </div>
-                              `;
-                            }).join("")
-                          : `<p class="small-text">Nobody has marked this yet.</p>`
-                      }
-                    </div>
-                  </div>
-                </article>
-              `;
-            }).join("")}
-          </div>
-        </section>
-      `;
-    })
-    .join("");
-
-  message.textContent = "";
-
-  document.querySelectorAll(".save-excursion-btn").forEach((button) => {
-    button.addEventListener("click", async () => {
-      const excursionId = Number(button.dataset.excursionId);
-      const booked = document.querySelector(`.excursion-booked[data-excursion-id="${excursionId}"]`).checked;
-      const bookedTime = document.querySelector(`.excursion-time[data-excursion-id="${excursionId}"]`).value.trim();
-      const notes = document.querySelector(`.excursion-notes[data-excursion-id="${excursionId}"]`).value.trim();
-
-      button.textContent = "Saving...";
-
-      const existing = mySelections[excursionId];
-
-      let error;
-
-      if (existing) {
-        const result = await window.supabaseClient
-          .from("member_excursions")
-          .update({
-            booked,
-            booked_time: bookedTime || null,
-            notes: notes || null,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", existing.id);
-
-        error = result.error;
-      } else {
-        const result = await window.supabaseClient
-          .from("member_excursions")
-          .insert({
-            user_id: user.id,
-            excursion_id: excursionId,
-            booked,
-            booked_time: bookedTime || null,
-            notes: notes || null,
-          })
-          .select()
-          .single();
-
-        error = result.error;
-
-        if (!error && result.data) {
-          mySelections[excursionId] = result.data;
-        }
+      if (row.user_id === user.id) {
+        mySelections[row.excursion_id] = row;
       }
-
-      if (error) {
-        console.error("SAVE EXCURSION ERROR:", error);
-        button.textContent = "Save";
-        alert("Could not save excursion choice.");
-        return;
-      }
-
-      location.reload();
     });
-  });
+
+    const groupedByPort = {};
+    (excursions || []).forEach((excursion) => {
+      if (!groupedByPort[excursion.port_name]) groupedByPort[excursion.port_name] = [];
+      groupedByPort[excursion.port_name].push(excursion);
+    });
+
+    wrap.innerHTML = Object.entries(groupedByPort)
+      .map(([portName, items]) => {
+        const excursionCards = items
+          .map((excursion) => {
+            const mine = mySelections[excursion.id];
+            const bookedBy = (groupedSelections[excursion.id] || []).filter((x) => x.booked);
+
+            return `
+              <article class="card excursion-card" data-excursion-id="${excursion.id}">
+                <span class="pill">${excursion.day_label || "Port Day"}</span>
+                <h3>${excursion.excursion_name}</h3>
+                <p><strong>Price:</strong> ${
+                  excursion.price_adult
+                    ? `$${Number(excursion.price_adult).toFixed(2)} adult`
+                    : "Check listing"
+                }${excursion.price_child ? ` / $${Number(excursion.price_child).toFixed(2)} child` : ""}</p>
+                <p><strong>Duration:</strong> ${excursion.duration_text || "Not listed"}</p>
+                <p><strong>Activity Level:</strong> ${excursion.activity_level || "Not listed"}</p>
+                <p><strong>Details:</strong> ${excursion.details || "No details added yet."}</p>
+
+                <div class="excursion-booking-box">
+                  <label class="checkbox-row">
+                    <input type="checkbox" class="booked-checkbox" ${mine?.booked ? "checked" : ""} />
+                    <span>I booked this</span>
+                  </label>
+
+                  <label>Time</label>
+                  <input
+                    type="text"
+                    class="booked-time-input"
+                    placeholder="10:30 AM"
+                    value="${mine?.booked_time || ""}"
+                  />
+
+                  <label>Notes</label>
+                  <textarea class="excursion-notes-input" rows="3" placeholder="Meeting at the pier, beach day, tequila plans...">${mine?.notes || ""}</textarea>
+
+                  <div class="button-row" style="margin-top: 1rem;">
+                    <button type="button" class="btn btn-primary save-excursion-btn">Save</button>
+                  </div>
+                </div>
+
+                <div class="excursion-booked-by">
+                  <h4>Booked By</h4>
+                  ${
+                    bookedBy.length
+                      ? bookedBy
+                          .map((entry) => {
+                            const person =
+                              entry.profiles?.display_name ||
+                              entry.profiles?.email ||
+                              "Member";
+                            const time = entry.booked_time ? ` — ${entry.booked_time}` : "";
+                            const notes = entry.notes
+                              ? `<div class="small-text">${entry.notes}</div>`
+                              : "";
+
+                            return `
+                              <div class="dashboard-mini-item">
+                                <strong>${person}</strong>${time}
+                                ${notes}
+                              </div>
+                            `;
+                          })
+                          .join("")
+                      : `<p class="small-text">Nobody has marked this one yet.</p>`
+                  }
+                </div>
+              </article>
+            `;
+          })
+          .join("");
+
+        return `
+          <section class="card">
+            <h2>${portName}</h2>
+            <div class="excursions-grid">
+              ${excursionCards}
+            </div>
+          </section>
+        `;
+      })
+      .join("");
+
+    message.textContent = "";
+
+    document.querySelectorAll(".save-excursion-btn").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const card = button.closest(".excursion-card");
+        const excursionId = card.dataset.excursionId;
+        const booked = card.querySelector(".booked-checkbox").checked;
+        const bookedTime = card.querySelector(".booked-time-input").value.trim();
+        const notes = card.querySelector(".excursion-notes-input").value.trim();
+
+        const existingRow = mySelections[excursionId] || null;
+        const wasBooked = !!existingRow?.booked;
+
+        message.textContent = "Saving excursion...";
+
+        if (existingRow) {
+          const { error: updateError } = await window.supabaseClient
+            .from("member_excursions")
+            .update({
+              booked,
+              booked_time: bookedTime || null,
+              notes: notes || null,
+            })
+            .eq("id", existingRow.id);
+
+          if (updateError) {
+            console.error("UPDATE EXCURSION ERROR:", updateError);
+            message.textContent = "Could not save excursion.";
+            return;
+          }
+        } else {
+          const { error: insertError } = await window.supabaseClient
+            .from("member_excursions")
+            .insert({
+              user_id: user.id,
+              excursion_id: excursionId,
+              booked,
+              booked_time: bookedTime || null,
+              notes: notes || null,
+            });
+
+          if (insertError) {
+            console.error("INSERT EXCURSION ERROR:", insertError);
+            message.textContent = "Could not save excursion.";
+            return;
+          }
+        }
+
+        if (booked && !wasBooked && typeof window.createNotification === "function") {
+          const excursionName =
+            card.querySelector("h3")?.textContent?.trim() || "an excursion";
+
+          const portName =
+            card.closest(".card")?.querySelector("h2")?.textContent?.trim() || "a port";
+
+          const person =
+            myProfile.display_name || myProfile.email || "A member";
+
+          await window.createNotification({
+            type: "excursion_booked",
+            title: "New Excursion Booked",
+            message: `${person} booked ${excursionName} in ${portName}${bookedTime ? ` at ${bookedTime}` : ""}.`,
+            link_url: "excursions.html",
+            meta: {
+              excursion_id: excursionId,
+              booked_time: bookedTime || null,
+            },
+          });
+        }
+
+        message.textContent = "Excursion saved.";
+        await loadExcursions();
+      });
+    });
+  }
+
+  await loadExcursions();
 });
