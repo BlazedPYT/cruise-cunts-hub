@@ -28,6 +28,27 @@
       <p id="admin-message" class="message"></p>
     </section>
 
+    <section class="card" style="max-width: 720px; margin: 0 auto 1.5rem;">
+      <h2>Create Member Account</h2>
+      <p class="small-text">
+        Create a member with a temporary password. They can log in and change it later.
+      </p>
+
+      <form id="create-member-form" class="form-stack">
+        <label for="new-member-name">Display Name</label>
+        <input id="new-member-name" type="text" placeholder="Jonathan" />
+
+        <label for="new-member-email">Email</label>
+        <input id="new-member-email" type="email" placeholder="friend@email.com" required />
+
+        <label for="new-member-password">Temporary Password</label>
+        <input id="new-member-password" type="text" placeholder="TempPass123!" required />
+
+        <button type="submit" class="btn btn-primary">Create Account</button>
+        <p id="create-member-message" class="message"></p>
+      </form>
+    </section>
+
     <section class="card">
       <div id="user-list" class="user-list"></div>
     </section>
