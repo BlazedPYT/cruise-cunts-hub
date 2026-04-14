@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Current Booked Trip | Cruise Cunts Hub</title>
+  <style>
+    :root{
+      --bg:#f4f8fb;
+      --card:#ffffff;
+      --text:#17324d;
+      --muted:#5f7287;
+      --accent:#1da1db;
+      --accent-dark:#1178a8;
+      --line:#d9e5ef;
+      --soft:#eaf6fc;
+      --good:#dff6e8;
+      --good-text:#1d6b42;
+      --warn:#fff3cd;
+      --shadow:0 12px 30px rgba(16,42,67,.10);
+      --radius:22px;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Arial, Helvetica, sans-serif;
+      background:linear-gradient(180deg,#dff1fb 0%, #f6fbfe 100%);
+      color:var(--text);
+    }
+
+    a{color:var(--accent-dark); text-decoration:none}
+    a:hover{text-decoration:underline}
+
+    .wrap{
+      max-width:1200px;
+      margin:0 auto;
+      padding:28px 18px 60px;
+    }
+
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-bottom:22px;
+      flex-wrap:wrap;
+    }
+
+    .brand{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+
+    .brand h1{
+      margin:0;
+      font-size:2rem;
+      line-height:1.1;
+    }
+
+    .brand p{
+      margin:0;
+      color:var(--muted);
+      font-size:.98rem;
+    }
+
+    .nav-links{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .btn{
+      display:inline-block;
+      background:var(--card);
+      color:var(--accent-dark);
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:10px 16px;
+      font-weight:700;
+      box-shadow:var(--shadow);
+    }
+
+    .btn.primary{
+      background:var(--accent);
+      color:#fff;
+      border-color:transparent;
+    }
+
+    .hero{
+      background:linear-gradient(135deg, rgba(29,161,219,.16), rgba(255,255,255,.92));
+      border:1px solid var(--line);
+      border-radius:28px;
+      box-shadow:var(--shadow);
+      padding:28px;
+      margin-bottom:22px;
+    }
+
+    .hero-grid{
+      display:grid;
+      grid-template-columns:1.25fr .9fr;
+      gap:20px;
+    }
+
+    .badge{
+      display:inline-block;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:7px 12px;
+      font-size:.9rem;
+      font-weight:700;
+      margin-right:8px;
+      margin-bottom:8px;
+    }
+
+    .price-box{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:22px;
+      padding:20px;
+    }
+
+    .price-box h3{
+      margin-top:0;
+      margin-bottom:12px;
+    }
+
+    .big-price{
+      font-size:2rem;
+      font-weight:800;
+      margin:8px 0 2px;
+    }
+
+    .muted{
+      color:var(--muted);
+    }
+
+    .note{
+      background:var(--warn);
+      border:1px solid #f0df99;
+      color:#6f5a12;
+      border-radius:16px;
+      padding:12px 14px;
+      font-size:.95rem;
+      margin-top:12px;
+    }
+
+    .section{
+      margin-top:26px;
+    }
+
+    .section h2{
+      margin:0 0 14px;
+      font-size:1.5rem;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:16px;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:22px;
+      box-shadow:var(--shadow);
+      padding:18px;
+    }
+
+    .card h3{
+      margin-top:0;
+      margin-bottom:10px;
+      font-size:1.1rem;
+    }
+
+    .pill{
+      display:inline-block;
+      padding:6px 10px;
+      border-radius:999px;
+      background:var(--soft);
+      color:var(--accent-dark);
+      font-size:.85rem;
+      font-weight:700;
+      margin-bottom:10px;
+    }
+
+    .good{
+      background:var(--good);
+      color:var(--good-text);
+    }
+
+    .table-wrap{
+      overflow:auto;
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:22px;
+      box-shadow:var(--shadow);
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:760px;
+    }
+
+    th, td{
+      padding:14px 16px;
+      border-bottom:1px solid var(--line);
+      text-align:left;
+      vertical-align:top;
+    }
+
+    th{
+      background:#f7fbfe;
+      font-size:.95rem;
+    }
+
+    tr:last-child td{
+      border-bottom:none;
+    }
+
+    .port-grid{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:16px;
+    }
+
+    .port-card h3{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .quick-list{
+      margin:10px 0 0;
+      padding-left:18px;
+      color:var(--text);
+    }
+
+    .quick-list li{
+      margin-bottom:8px;
+    }
+
+    .links{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:14px;
+    }
+
+    .links a{
+      background:#f7fbfe;
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:8px 12px;
+      font-weight:700;
+    }
+
+    .footer-note{
+      margin-top:22px;
+      color:var(--muted);
+      font-size:.92rem;
+    }
+
+    @media (max-width: 900px){
+      .hero-grid,
+      .grid,
+      .port-grid{
+        grid-template-columns:1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <h1>🌴 Current Booked Trip</h1>
+        <p>Cruise Cunts Hub · Jonathan & Daniel’s confirmed sailing</p>
+      </div>
+
+      <div class="nav-links">
+        <a class="btn" href="dashboard.html">Dashboard</a>
+        <a class="btn" href="index.html">Home</a>
+      </div>
+    </div>
+
+    <section class="hero">
+      <div class="hero-grid">
+        <div>
+          <div class="badge">🚢 Norwegian Jewel</div>
+          <div class="badge">🗓️ 10-Day Caribbean</div>
+          <div class="badge">🛏️ Inside Stateroom</div>
+          <div class="badge">👬 2 Guests</div>
+
+          <h2 style="margin:12px 0 8px;">Miami → Great Stirrup Cay → Cabo Rojo → Aruba → Curaçao → Falmouth → Grand Cayman → Miami</h2>
+          <p class="muted" style="font-size:1rem; line-height:1.6;">
+            This is the central page for your currently booked cruise. It includes the itinerary,
+            ship info, official destination links, country basics, and estimated excursion pricing
+            so everyone can quickly compare ideas without digging through ten tabs.
+          </p>
+
+          <div class="links">
+            <a href="https://www.ncl.com/cruise-ship/jewel" target="_blank">Official Ship Page</a>
+            <a href="https://www.ncl.com/why-cruise-norwegian/cruise-destinations/caribbean-cruises" target="_blank">NCL Caribbean Cruises</a>
+          </div>
+        </div>
+
+        <div class="price-box">
+          <h3>Booked Cabin Snapshot</h3>
+          <div class="muted">Booked guests</div>
+          <div style="font-weight:700; margin-bottom:10px;">Jonathan + Daniel</div>
+
+          <div class="muted">Cabin type</div>
+          <div style="font-weight:700; margin-bottom:10px;">Inside Stateroom</div>
+
+          <div class="muted">Booked total for 2</div>
+          <div class="big-price">$3,288.00</div>
+          <div class="muted">Gross total from your confirmation</div>
+
+          <div class="note">
+            Excursion pricing below is estimated from currently visible public listings and can change
+            by ship, sail date, demand, and booking window.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Trip Timeline</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Day</th>
+              <th>Port</th>
+              <th>Arrive</th>
+              <th>Depart</th>
+              <th>Booked</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Tue</td><td>Miami, Florida</td><td>—</td><td>4:00 PM</td><td>2</td></tr>
+            <tr><td>Wed</td><td>Great Stirrup Cay, Bahamas</td><td>7:00 AM</td><td>3:00 PM</td><td>2</td></tr>
+            <tr><td>Thu</td><td>At Sea</td><td>—</td><td>—</td><td>2</td></tr>
+            <tr><td>Fri</td><td>Cabo Rojo, Dominican Republic</td><td>9:00 AM</td><td>4:00 PM</td><td>2</td></tr>
+            <tr><td>Sat</td><td>Oranjestad, Aruba</td><td>11:00 AM</td><td>8:00 PM</td><td>2</td></tr>
+            <tr><td>Sun</td><td>Willemstad, Curaçao</td><td>7:00 AM</td><td>7:00 PM</td><td>2</td></tr>
+            <tr><td>Mon</td><td>At Sea</td><td>—</td><td>—</td><td>2</td></tr>
+            <tr><td>Tue</td><td>Falmouth, Jamaica</td><td>7:00 AM</td><td>5:00 PM</td><td>2</td></tr>
+            <tr><td>Wed</td><td>George Town, Grand Cayman</td><td>7:00 AM</td><td>5:00 PM</td><td>2</td></tr>
+            <tr><td>Thu</td><td>At Sea</td><td>—</td><td>—</td><td>2</td></tr>
+            <tr><td>Fri</td><td>Miami, Florida (Flight Departure)</td><td>7:00 AM</td><td>—</td><td>2</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Ship Quick Info</h2>
+      <div class="grid">
+        <div class="card">
+          <span class="pill">🚢 Ship</span>
+          <h3>Norwegian Jewel</h3>
+          <p class="muted">
+            Mid-size NCL ship with a more relaxed feel than the giant mega-ships, which honestly
+            makes it easier for a friend-group cruise.
+          </p>
+        </div>
+
+        <div class="card">
+          <span class="pill">🍸 Onboard</span>
+          <h3>Dining + bars + hangout space</h3>
+          <p class="muted">
+            Great for people who want plenty to do without feeling like they’re in an airport mall.
+          </p>
+        </div>
+
+        <div class="card">
+          <span class="pill good">💡 Group Tip</span>
+          <h3>Best use of this page</h3>
+          <p class="muted">
+            Have everyone use this page to decide which ports are “beach day,” “adventure day,”
+            or “walk-around-and-drink day.”
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Port + Country Guide</h2>
+      <div class="port-grid">
+
+        <div class="card port-card">
+          <span class="pill">🏝️ Bahamas</span>
+          <h3>
+            <span>Great Stirrup Cay</span>
+            <span class="muted">7:00 AM – 3:00 PM</span>
+          </h3>
+          <p class="muted">
+            NCL’s private island day. This is the easiest “relax and don’t overthink it” stop.
+          </p>
+          <ul class="quick-list">
+            <li><strong>Country:</strong> Bahamas</li>
+            <li><strong>Why people like it:</strong> beach day, cabanas, lagoon areas, snorkeling, easy ship-to-shore vibe</li>
+            <li><strong>Typical excursion ideas:</strong> wave runner, kayak, snorkel, zipline, Silver Cove villas/cabanas</li>
+            <li><strong>Estimated costs:</strong> basic beach day can be nearly free; kayaks/snorkel add-ons often run modest extra; premium villas/cabanas can jump into the several-hundred-dollar range; wave runner-style activities can be around $175+ per person</li>
+          </ul>
+          <div class="links">
+            <a href="https://www.ncl.com/shore-excursions/search?destination=Bahamas+Cruises&port=NPI" target="_blank">NCL Great Stirrup Cay Excursions</a>
+            <a href="https://www.ncl.com/why-cruise-norwegian/cay" target="_blank">About Great Stirrup Cay</a>
+          </div>
+        </div>
+
+        <div class="card port-card">
+          <span class="pill">🇩🇴 Dominican Republic</span>
+          <h3>
+            <span>Cabo Rojo</span>
+            <span class="muted">9:00 AM – 4:00 PM</span>
+          </h3>
+          <p class="muted">
+            Newer cruise stop near Pedernales, with a more natural/less overbuilt feel than the
+            usual big-resort ports.
+          </p>
+          <ul class="quick-list">
+            <li><strong>Country:</strong> Dominican Republic</li>
+            <li><strong>Currency:</strong> Dominican peso</li>
+            <li><strong>Language:</strong> Spanish</li>
+            <li><strong>Typical excursion ideas:</strong> Pedernales Beach Break, coastal cruise to Bahía de las Águilas, scenic beach getaway, eco-style nature outings</li>
+            <li><strong>Estimated costs:</strong> about $50–$130+ per person depending on whether it’s a simple beach break or a longer boat/scenic excursion</li>
+          </ul>
+          <div class="links">
+            <a href="https://www.ncl.com/shore-excursions/search?destination=Extraordinary+Journeys%2CCaribbean+Cruises&port=CBR" target="_blank">NCL Cabo Rojo Excursions</a>
+            <a href="https://www.godominicanrepublic.com/" target="_blank">Dominican Republic Tourism</a>
+          </div>
+        </div>
+
+        <div class="card port-card">
+          <span class="pill">🇦🇼 Aruba</span>
+          <h3>
+            <span>Oranjestad</span>
+            <span class="muted">11:00 AM – 8:00 PM</span>
+          </h3>
+          <p class="muted">
+            One of the easiest “this place is stupid pretty” ports. Great for beaches, catamarans,
+            and just wandering around with a drink.
+          </p>
+          <ul class="quick-list">
+            <li><strong>Country:</strong> Aruba</li>
+            <li><strong>Currency:</strong> Aruban florin, though U.S. dollars are widely accepted</li>
+            <li><strong>Language:</strong> Dutch and Papiamento, with English widely used for visitors</li>
+            <li><strong>Typical excursion ideas:</strong> catamaran snorkel sail, beach break, jeep/UTV island tours, lighthouse/natural bridge sightseeing</li>
+            <li><strong>Estimated costs:</strong> snorkeling sails commonly start around $85+; private/custom water tours can cost much more</li>
+          </ul>
+          <div class="links">
+            <a href="https://www.aruba.com/us/explore/cruise" target="_blank">Aruba Cruise Info</a>
+            <a href="https://www.aruba.com/us/explore" target="_blank">Aruba Things To Do</a>
+          </div>
+        </div>
+
+        <div class="card port-card">
+          <span class="pill">🇨🇼 Curaçao</span>
+          <h3>
+            <span>Willemstad</span>
+            <span class="muted">7:00 AM – 7:00 PM</span>
+          </h3>
+          <p class="muted">
+            Probably one of the prettiest walk-around ports on the trip. Colorful, easy to photo-dump,
+            and great for beaches or snorkeling.
+          </p>
+          <ul class="quick-list">
+            <li><strong>Country:</strong> Curaçao</li>
+            <li><strong>Currency:</strong> Caribbean guilder</li>
+            <li><strong>Language:</strong> Papiamentu, Dutch, and English are commonly used</li>
+            <li><strong>Typical excursion ideas:</strong> beach hopping, turtle snorkeling, Blue Bay snorkeling, trolley/train city sightseeing, caves and west-side island tours</li>
+            <li><strong>Estimated costs:</strong> snorkeling and beach tours often start around $55–$155 depending on how private or long the tour is</li>
+          </ul>
+          <div class="links">
+            <a href="https://www.curacao.com/en/activity/cruise" target="_blank">Curaçao Cruise Info</a>
+            <a href="https://www.curacao.com/en/" target="_blank">Curaçao Tourism</a>
+          </div>
+        </div>
+
+        <div class="card port-card">
+          <span class="pill">🇯🇲 Jamaica</span>
+          <h3>
+            <span>Falmouth</span>
+            <span class="muted">7:00 AM – 5:00 PM</span>
+          </h3>
+          <p class="muted">
+            Best stop for people who want a real excursion day instead of just shopping near port.
+          </p>
+          <ul class="quick-list">
+            <li><strong>Country:</strong> Jamaica</li>
+            <li><strong>Currency:</strong> Jamaican dollar</li>
+            <li><strong>Language:</strong> English</li>
+            <li><strong>Typical excursion ideas:</strong> Dunn’s River Falls, Blue Hole, river rafting, beach club, zipline combos</li>
+            <li><strong>Estimated costs:</strong> common public tour pricing sits around $124–$191 depending on combo, duration, and admissions included</li>
+          </ul>
+          <div class="links">
+            <a href="https://www.visitjamaica.com/" target="_blank">Visit Jamaica</a>
+            <a href="https://www.visitjamaica.com/explore-the-island/falmouth/" target="_blank">Falmouth Info</a>
+          </div>
+        </div>
+
+        <div class="card port-card">
+          <span class="pill">🇰🇾 Cayman Islands</span>
+          <h3>
+            <span>George Town, Grand Cayman</span>
+            <span class="muted">7:00 AM – 5:00 PM</span>
+          </h3>
+          <p class="muted">
+            Classic bucket-list port. If somebody in the group wants Stingray City, this is the day.
+          </p>
+          <ul class="quick-list">
+            <li><strong>Country:</strong> Cayman Islands</li>
+            <li><strong>Currency:</strong> Cayman Islands dollar</li>
+            <li><strong>Language:</strong> English</li>
+            <li><strong>Typical excursion ideas:</strong> Stingray City, Starfish Point, snorkeling, turtle center, Seven Mile Beach</li>
+            <li><strong>Estimated costs:</strong> shared Stingray City style tours often start around $62+; private charters cost much more</li>
+          </ul>
+          <div class="links">
+            <a href="https://www.visitcaymanislands.com/en-us" target="_blank">Visit Cayman Islands</a>
+            <a href="https://www.visitcaymanislands.com/en-us/things-to-do" target="_blank">Cayman Things To Do</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Quick Group Planning Ideas</h2>
+      <div class="grid">
+        <div class="card">
+          <span class="pill">☀️ Chill Days</span>
+          <h3>Best low-effort days</h3>
+          <p class="muted">
+            Great Stirrup Cay, Aruba, and Curaçao are the easiest “we just want cute water and drinks”
+            ports.
+          </p>
+        </div>
+
+        <div class="card">
+          <span class="pill">🔥 Adventure Days</span>
+          <h3>Best action ports</h3>
+          <p class="muted">
+            Falmouth and Grand Cayman are the strongest picks for planned excursions that feel worth
+            pre-booking.
+          </p>
+        </div>
+
+        <div class="card">
+          <span class="pill">💸 Budget Days</span>
+          <h3>Cheapest likely options</h3>
+          <p class="muted">
+            Great Stirrup Cay beach day, Curaçao walk-around day, and Aruba DIY sightseeing are usually
+            the easiest ways to keep spend lower.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <p class="footer-note">
+      Last updated manually by Cruise Cunts Hub. Excursion pricing is a planning estimate only —
+      always verify final pricing inside NCL or the tour operator before booking.
+    </p>
+  </div>
+</body>
+</html>
