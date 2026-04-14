@@ -14,10 +14,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  logoutBtn.addEventListener("click", async () => {
-    await window.supabaseClient.auth.signOut();
-    window.location.href = "index.html";
-  });
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", async () => {
+      await window.supabaseClient.auth.signOut();
+      window.location.href = "index.html";
+    });
+  }
 
   async function loadUsers() {
     userList.innerHTML = "Loading users...";
@@ -46,9 +48,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       item.innerHTML = `
         <h3>${user.display_name || "No display name"}</h3>
-        <p class="user-meta"><strong>Email:</strong> ${user.email}</p>
+        <p class="user-meta"><strong>Email:</strong> ${user.email || "No email"}</p>
         <p class="user-meta"><strong>Approved:</strong> ${user.approved ? "Yes" : "No"}</p>
-        <p class="user-meta"><strong>Role:</strong> ${user.role}</p>
+        <p class="user-meta"><strong>Role:</strong> ${user.role || "member"}</p>
         <div class="user-actions">
           <button class="btn btn-primary approve-btn" data-id="${user.id}" data-approved="${user.approved}">
             ${user.approved ? "Unapprove" : "Approve"}
@@ -120,6 +122,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       const email = document.getElementById("new-member-email").value.trim();
       const password = document.getElementById("new-member-password").value.trim();
 
+      if (!email || !password) {
+        createMemberMessage.textContent = "Email and temporary password are required.";
+        return;
+      }
+
       try {
         const {
           data: { session },
@@ -137,34 +144,24 @@ document.addEventListener("DOMContentLoaded", async () => {
           return;
         }
 
-        const response = await fetch("https://vhpbmkdtlajdohhxawno.supabase.co/functions/v1/swift-endpoint", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-            apikey: "sb_publishable_CT5E1XrtGMIs9Y8_0j6g6A__ehFemLQ"
-          },
-          body: JSON.stringify({
+        const { data, error } = await window.supabaseClient.functions.invoke("swift-endpoint", {
+          body: {
             display_name,
             email,
             password,
-          }),
+          },
         });
 
-        let result = null;
+        console.log("CREATE MEMBER DATA:", data);
+        console.log("CREATE MEMBER ERROR:", error);
 
-        try {
-          result = await response.json();
-        } catch (jsonError) {
-          console.error("JSON PARSE ERROR:", jsonError);
+        if (error) {
+          createMemberMessage.textContent = error.message || "Could not create account.";
+          return;
         }
 
-        console.log("CREATE MEMBER RESPONSE STATUS:", response.status);
-        console.log("CREATE MEMBER RESPONSE:", result);
-
-        if (!response.ok) {
-          createMemberMessage.textContent =
-            result?.error || `Could not create account. Status: ${response.status}`;
+        if (data?.error) {
+          createMemberMessage.textContent = data.error;
           return;
         }
 
