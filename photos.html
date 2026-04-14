@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trip Photos | Cruise Cunts Hub</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div>
+        <h2 class="site-title">Cruise Cunts Hub</h2>
+        <p class="small-text">Private trip photo albums</p>
+      </div>
+      <div class="button-row">
+        <a href="dashboard.html" class="btn btn-secondary">Dashboard</a>
+        <button id="logout-btn" class="btn btn-primary">Log Out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container page-space">
+    <section class="card">
+      <h1>Trip Photos</h1>
+      <p class="lead">
+        Upload, browse, and download our favorite cruise memories.
+      </p>
+      <p id="photos-message" class="message"></p>
+    </section>
+
+    <section class="card">
+      <div class="album-header">
+        <div>
+          <span class="pill">Album 01</span>
+          <h2>April 4–11, 2026 — 7 Day Western Caribbean Cruise</h2>
+          <p class="small-text">
+            Private member gallery for our last cruise.
+          </p>
+        </div>
+      </div>
+
+      <form id="photo-upload-form" class="photo-upload-form">
+        <div class="form-group">
+          <label for="photo-file">Choose Photo</label>
+          <input type="file" id="photo-file" accept="image/*" required />
+        </div>
+
+        <div class="form-group">
+          <label for="photo-caption">Caption (optional)</label>
+          <input
+            type="text"
+            id="photo-caption"
+            maxlength="150"
+            placeholder="Sunset on deck, sail away drinks, chaotic buffet plate..."
+          />
+        </div>
+
+        <div class="button-row">
+          <button type="submit" class="btn btn-primary">Upload Photo</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Gallery</h2>
+      <div id="trip-photos-grid" class="photos-grid">
+        <p class="small-text">Loading photos...</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/supabase-client.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/photos.js"></script>
+</body>
+</html>
