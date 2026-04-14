@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.error("SESSION ERROR:", sessionError);
       if (bookedAlreadyEl) bookedAlreadyEl.textContent = "Session error";
       if (dashboardExcursionsList) {
-        dashboardExcursionsList.innerHTML = `<p class="small-text">Session error.</p>`;
+        dashboardExcursionsList.innerHTML = '<p class="small-text">Session error.</p>';
       }
       return;
     }
@@ -49,7 +49,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.error("MY PROFILE ERROR:", myProfileError);
       if (bookedAlreadyEl) bookedAlreadyEl.textContent = "Profile error";
       if (dashboardExcursionsList) {
-        dashboardExcursionsList.innerHTML = `<p class="small-text">Profile error.</p>`;
+        dashboardExcursionsList.innerHTML = '<p class="small-text">Profile error.</p>';
       }
       return;
     }
@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!myProfile) {
       if (bookedAlreadyEl) bookedAlreadyEl.textContent = "No profile found";
       if (dashboardExcursionsList) {
-        dashboardExcursionsList.innerHTML = `<p class="small-text">No profile found.</p>`;
+        dashboardExcursionsList.innerHTML = '<p class="small-text">No profile found.</p>';
       }
       return;
     }
@@ -104,7 +104,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if (dashboardExcursionsList) {
-      dashboardExcursionsList.innerHTML = `<p class="small-text">Loading excursions...</p>`;
+      dashboardExcursionsList.innerHTML = '<p class="small-text">Loading excursions...</p>';
     }
 
     const { data: excursionRows, error: excursionError } = await window.supabaseClient
@@ -131,14 +131,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (excursionError) {
       console.error("DASHBOARD EXCURSIONS ERROR:", excursionError);
       if (dashboardExcursionsList) {
-        dashboardExcursionsList.innerHTML = `<p class="small-text">Could not load excursion activity.</p>`;
+        dashboardExcursionsList.innerHTML = '<p class="small-text">Could not load excursion activity.</p>';
       }
       return;
     }
 
     if (!excursionRows || excursionRows.length === 0) {
       if (dashboardExcursionsList) {
-        dashboardExcursionsList.innerHTML = `<p class="small-text">No excursions marked yet.</p>`;
+        dashboardExcursionsList.innerHTML = '<p class="small-text">No excursions marked yet.</p>';
       }
       return;
     }
@@ -170,7 +170,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.error("DASHBOARD CRASH:", err);
     if (bookedAlreadyEl) bookedAlreadyEl.textContent = "Dashboard error";
     if (dashboardExcursionsList) {
-      dashboardExcursionsList.innerHTML = `<p class="small-text">Dashboard error loading excursions.</p>`;
+      dashboardExcursionsList.innerHTML = '<p class="small-text">Dashboard error loading excursions.</p>';
     }
   }
 });
