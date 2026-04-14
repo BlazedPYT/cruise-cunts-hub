@@ -497,3 +497,21 @@ input:focus {
   background: #eef5fb;
   border-bottom: 1px solid #dce8f5;
 }
+
+.excursion-grid {
+  display: grid;
+  gap: 20px;
+}
+
+.excursion-meta {
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+
+.excursion-bookers {
+  margin-top: 1rem;
+}
+
+.excursion-bookers .mini-card {
+  background: #f8fbff;
+}
