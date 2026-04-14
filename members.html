@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Members | Cruise Cunts Hub</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div>
+        <h2 class="site-title">Cruise Cunts Hub</h2>
+        <p class="small-text">Approved member directory</p>
+      </div>
+      <div class="button-row">
+        <a class="btn btn-secondary" href="dashboard.html">Dashboard</a>
+        <a class="btn btn-secondary" href="profile.html">My Profile</a>
+        <button id="logout-btn" class="btn btn-primary">Log Out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container page-space">
+    <section class="card">
+      <h1>Group Members</h1>
+      <p class="lead">
+        Everyone approved in the group, their cruise vibe, and a little ship lore.
+      </p>
+    </section>
+
+    <section class="card">
+      <div id="members-grid" class="members-grid"></div>
+      <p id="members-message" class="small-text"></p>
+    </section>
+  </main>
+
+  <script src="js/supabase-client.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/members.js"></script>
+</body>
+</html>
