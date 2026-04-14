@@ -59,7 +59,7 @@
 
       <form id="photo-upload-form" class="photo-upload-form">
         <div class="form-group">
-          <label for="photo-file">Choose Photo</label>
+          <label for="photo-file">Choose Photo(s)</label>
           <input type="file" id="photo-file" accept="image/*" multiple required />
         </div>
 
@@ -74,7 +74,7 @@
         </div>
 
         <div class="button-row">
-          <button type="submit" class="btn btn-primary">Upload Photo</button>
+          <button type="submit" class="btn btn-primary">Upload Photo(s)</button>
         </div>
       </form>
     </section>
@@ -86,6 +86,15 @@
       </div>
     </section>
   </main>
+
+  <div id="photo-lightbox" class="photo-lightbox hidden">
+    <div class="photo-lightbox-backdrop" id="photo-lightbox-close"></div>
+    <div class="photo-lightbox-content">
+      <button id="photo-lightbox-x" class="photo-lightbox-x" type="button">×</button>
+      <img id="photo-lightbox-img" class="photo-lightbox-img" src="" alt="Expanded photo" />
+      <p id="photo-lightbox-caption" class="photo-lightbox-caption"></p>
+    </div>
+  </div>
 
   <script src="js/supabase-client.js"></script>
   <script src="js/auth.js"></script>
