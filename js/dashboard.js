@@ -1,81 +1,103 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  if (!window.supabaseClient) {
-    window.location.href = "login.html";
-    return;
-  }
-
-  const {
-    data: { session },
-  } = await window.supabaseClient.auth.getSession();
-
-  if (!session) {
-    window.location.href = "login.html";
-    return;
-  }
-
-  const user = session.user;
+  const bookedAlreadyEl = document.getElementById("booked-already");
   const welcomeTitle = document.getElementById("welcome-title");
   const logoutBtn = document.getElementById("logout-btn");
   const adminLink = document.getElementById("admin-link");
-  const bookedAlreadyEl = document.getElementById("booked-already");
 
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", async () => {
-      await window.supabaseClient.auth.signOut();
+  try {
+    if (!window.supabaseClient) {
       window.location.href = "login.html";
-    });
-  }
+      return;
+    }
 
-  const { data: myProfile, error: myProfileError } = await window.supabaseClient
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
+    const {
+      data: { session },
+      error: sessionError,
+    } = await window.supabaseClient.auth.getSession();
 
-  if (myProfileError || !myProfile) {
-    console.error("PROFILE LOAD ERROR:", myProfileError);
-    window.location.href = "login.html";
-    return;
-  }
+    if (sessionError) {
+      console.error("SESSION ERROR:", sessionError);
+      if (bookedAlreadyEl) bookedAlreadyEl.textContent = "Session error";
+      return;
+    }
 
-  if (!myProfile.approved) {
-    window.location.href = "pending.html";
-    return;
-  }
+    if (!session) {
+      window.location.href = "login.html";
+      return;
+    }
 
-  if (welcomeTitle) {
-    welcomeTitle.textContent = `Welcome, ${myProfile.display_name || user.email}`;
-  }
+    const user = session.user;
 
-  if (adminLink && myProfile.role === "admin") {
-    adminLink.classList.remove("hidden");
-  }
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", async () => {
+        await window.supabaseClient.auth.signOut();
+        window.location.href = "login.html";
+      });
+    }
 
-  if (bookedAlreadyEl) {
+    const { data: myProfile, error: myProfileError } = await window.supabaseClient
+      .from("profiles")
+      .select("id, display_name, email, approved, role")
+      .eq("id", user.id)
+      .single();
+
+    if (myProfileError) {
+      console.error("MY PROFILE ERROR:", myProfileError);
+      if (bookedAlreadyEl) bookedAlreadyEl.textContent = "Profile error";
+      return;
+    }
+
+    if (!myProfile) {
+      if (bookedAlreadyEl) bookedAlreadyEl.textContent = "No profile found";
+      return;
+    }
+
+    if (!myProfile.approved) {
+      window.location.href = "pending.html";
+      return;
+    }
+
+    if (welcomeTitle) {
+      welcomeTitle.textContent = `Welcome, ${myProfile.display_name || myProfile.email || "Member"}`;
+    }
+
+    if (adminLink && myProfile.role === "admin") {
+      adminLink.classList.remove("hidden");
+    }
+
+    if (bookedAlreadyEl) {
+      bookedAlreadyEl.textContent = "Checking booked members...";
+    }
+
     const { data: bookedMembers, error: bookedError } = await window.supabaseClient
       .from("profiles")
       .select("display_name, email")
       .eq("approved", true)
-      .eq("cruise_status", "booked")
-      .order("display_name", { ascending: true });
+      .eq("cruise_status", "booked");
 
     if (bookedError) {
       console.error("BOOKED MEMBERS ERROR:", bookedError);
-      bookedAlreadyEl.textContent = "Could not load booked members";
+      if (bookedAlreadyEl) bookedAlreadyEl.textContent = "Could not load booked members";
       return;
     }
 
     if (!bookedMembers || bookedMembers.length === 0) {
-      bookedAlreadyEl.textContent = "Nobody yet";
+      if (bookedAlreadyEl) bookedAlreadyEl.textContent = "Nobody yet";
       return;
     }
 
     const names = bookedMembers.map((member) => {
-      return member.display_name && member.display_name.trim() !== ""
-        ? member.display_name
-        : member.email;
+      if (member.display_name && member.display_name.trim() !== "") {
+        return member.display_name.trim();
+      }
+      return member.email || "Unnamed Member";
     });
 
-    bookedAlreadyEl.textContent = names.join(", ");
+    if (bookedAlreadyEl) {
+      bookedAlreadyEl.textContent = names.join(", ");
+    }
+  } catch (err) {
+    console.error("DASHBOARD CRASH:", err);
+    if (bookedAlreadyEl) bookedAlreadyEl.textContent = "Dashboard error";
   }
 });
