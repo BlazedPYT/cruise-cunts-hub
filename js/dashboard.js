@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const welcomeTitle = document.getElementById("welcome-title");
   const logoutBtn = document.getElementById("logout-btn");
   const adminLink = document.getElementById("admin-link");
+  const dashboardExcursionsList = document.getElementById("dashboard-excursions-list");
 
   try {
     if (!window.supabaseClient) {
@@ -78,23 +79,78 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (bookedError) {
       console.error("BOOKED MEMBERS ERROR:", bookedError);
       if (bookedAlreadyEl) bookedAlreadyEl.textContent = "Could not load booked members";
-      return;
-    }
-
-    if (!bookedMembers || bookedMembers.length === 0) {
+    } else if (!bookedMembers || bookedMembers.length === 0) {
       if (bookedAlreadyEl) bookedAlreadyEl.textContent = "Nobody yet";
+    } else {
+      const names = bookedMembers.map((member) => {
+        if (member.display_name && member.display_name.trim() !== "") {
+          return member.display_name.trim();
+        }
+        return member.email || "Unnamed Member";
+      });
+
+      if (bookedAlreadyEl) {
+        bookedAlreadyEl.textContent = names.join(", ");
+      }
+    }
+
+    if (dashboardExcursionsList) {
+      dashboardExcursionsList.innerHTML = `<p class="small-text">Loading excursions...</p>`;
+    }
+
+    const { data: excursionRows, error: excursionError } = await window.supabaseClient
+      .from("member_excursions")
+      .select(`
+        booked,
+        booked_time,
+        notes,
+        excursions (
+          excursion_name,
+          port_name
+        ),
+        profiles (
+          display_name,
+          email
+        )
+      `)
+      .eq("booked", true);
+
+    if (excursionError) {
+      console.error("DASHBOARD EXCURSIONS ERROR:", excursionError);
+      if (dashboardExcursionsList) {
+        dashboardExcursionsList.innerHTML = `<p class="small-text">Could not load excursion activity.</p>`;
+      }
       return;
     }
 
-    const names = bookedMembers.map((member) => {
-      if (member.display_name && member.display_name.trim() !== "") {
-        return member.display_name.trim();
+    if (!excursionRows || excursionRows.length === 0) {
+      if (dashboardExcursionsList) {
+        dashboardExcursionsList.innerHTML = `<p class="small-text">No excursions marked yet.</p>`;
       }
-      return member.email || "Unnamed Member";
+      return;
+    }
+
+    const sortedRows = excursionRows.sort((a, b) => {
+      const nameA = (a.profiles?.display_name || a.profiles?.email || "").toLowerCase();
+      const nameB = (b.profiles?.display_name || b.profiles?.email || "").toLowerCase();
+      return nameA.localeCompare(nameB);
     });
 
-    if (bookedAlreadyEl) {
-      bookedAlreadyEl.textContent = names.join(", ");
+    if (dashboardExcursionsList) {
+      dashboardExcursionsList.innerHTML = sortedRows
+        .map((row) => {
+          const person = row.profiles?.display_name || row.profiles?.email || "Member";
+          const excursion = row.excursions?.excursion_name || "Excursion";
+          const port = row.excursions?.port_name || "";
+          const time = row.booked_time ? ` — ${row.booked_time}` : "";
+          return `
+            <div class="dashboard-mini-item">
+              <strong>${person}</strong> — ${excursion}${time}
+              <div class="small-text">${port}</div>
+            </div>
+          `;
+        })
+        .join("");
     }
   } catch (err) {
     console.error("DASHBOARD CRASH:", err);
