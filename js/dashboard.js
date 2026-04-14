@@ -19,6 +19,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (sessionError) {
       console.error("SESSION ERROR:", sessionError);
       if (bookedAlreadyEl) bookedAlreadyEl.textContent = "Session error";
+      if (dashboardExcursionsList) {
+        dashboardExcursionsList.innerHTML = `<p class="small-text">Session error.</p>`;
+      }
       return;
     }
 
@@ -45,11 +48,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (myProfileError) {
       console.error("MY PROFILE ERROR:", myProfileError);
       if (bookedAlreadyEl) bookedAlreadyEl.textContent = "Profile error";
+      if (dashboardExcursionsList) {
+        dashboardExcursionsList.innerHTML = `<p class="small-text">Profile error.</p>`;
+      }
       return;
     }
 
     if (!myProfile) {
       if (bookedAlreadyEl) bookedAlreadyEl.textContent = "No profile found";
+      if (dashboardExcursionsList) {
+        dashboardExcursionsList.innerHTML = `<p class="small-text">No profile found.</p>`;
+      }
       return;
     }
 
@@ -98,22 +107,26 @@ document.addEventListener("DOMContentLoaded", async () => {
       dashboardExcursionsList.innerHTML = `<p class="small-text">Loading excursions...</p>`;
     }
 
-const { data: excursionRows, error: excursionError } = await window.supabaseClient
-  .from("member_excursions")
-  .select(`
-    booked,
-    booked_time,
-    notes,
-    excursions (
-      excursion_name,
-      port_name
-    ),
-    profiles (
-      display_name,
-      email
-    )
-  `)
-  .eq("booked", true);
+    const { data: excursionRows, error: excursionError } = await window.supabaseClient
+      .from("member_excursions")
+      .select(`
+        id,
+        booked,
+        booked_time,
+        notes,
+        excursions!member_excursions_excursion_id_fkey (
+          excursion_name,
+          port_name
+        ),
+        profiles!member_excursions_user_id_fkey (
+          display_name,
+          email
+        )
+      `)
+      .eq("booked", true);
+
+    console.log("DASHBOARD EXCURSION ROWS:", excursionRows);
+    console.log("DASHBOARD EXCURSION ERROR:", excursionError);
 
     if (excursionError) {
       console.error("DASHBOARD EXCURSIONS ERROR:", excursionError);
@@ -143,6 +156,7 @@ const { data: excursionRows, error: excursionError } = await window.supabaseClie
           const excursion = row.excursions?.excursion_name || "Excursion";
           const port = row.excursions?.port_name || "";
           const time = row.booked_time ? ` — ${row.booked_time}` : "";
+
           return `
             <div class="dashboard-mini-item">
               <strong>${person}</strong> — ${excursion}${time}
@@ -155,5 +169,8 @@ const { data: excursionRows, error: excursionError } = await window.supabaseClie
   } catch (err) {
     console.error("DASHBOARD CRASH:", err);
     if (bookedAlreadyEl) bookedAlreadyEl.textContent = "Dashboard error";
+    if (dashboardExcursionsList) {
+      dashboardExcursionsList.innerHTML = `<p class="small-text">Dashboard error loading excursions.</p>`;
+    }
   }
 });
