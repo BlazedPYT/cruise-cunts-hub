@@ -1,3 +1,5 @@
+// js/photos.js
+
 document.addEventListener("DOMContentLoaded", async () => {
   const authData = await requireAuth(false);
   if (!authData) return;
@@ -9,7 +11,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const fileInput = document.getElementById("photo-file");
   const captionInput = document.getElementById("photo-caption");
   const photosGrid = document.getElementById("trip-photos-grid");
-
   const lightbox = document.getElementById("photo-lightbox");
   const lightboxImg = document.getElementById("photo-lightbox-img");
   const lightboxCaption = document.getElementById("photo-lightbox-caption");
@@ -19,6 +20,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   const TRIP_SLUG = "western-caribbean-apr-2026";
   const TRIP_NAME = "April 4–11, 2026 — 7 Day Western Caribbean Cruise";
   const BUCKET_NAME = "trip-photos";
+
+  if (typeof window.setupNotifications === "function") {
+    await window.setupNotifications(user.id);
+  }
 
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async () => {
@@ -91,31 +96,20 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const cards = await Promise.all(
       data.map(async (photo) => {
-        const { data: signedData, error: signedError } = await window.supabaseClient
-          .storage
+        const { data: signedData, error: signedError } = await window.supabaseClient.storage
           .from(BUCKET_NAME)
           .createSignedUrl(photo.image_path, 3600);
 
         if (signedError || !signedData?.signedUrl) {
           console.error("SIGNED URL ERROR:", signedError);
-          return `
-            <article class="photo-card">
-              <div class="photo-card-body">
-                <p>Could not load image.</p>
-              </div>
-            </article>
-          `;
+          return `<div class="photo-card"><p class="small-text">Could not load image.</p></div>`;
         }
 
-        const uploader =
-          photo.profiles?.display_name ||
-          photo.profiles?.email ||
-          "Member";
-
-        const canDelete =
-          photo.uploaded_by === user.id || profile.role === "admin";
-
-        const safeCaption = (photo.caption || "").replace(/"/g, "&quot;");
+        const uploader = photo.profiles?.display_name || photo.profiles?.email || "Member";
+        const canDelete = photo.uploaded_by === user.id || profile.role === "admin";
+        const canEditCaption = photo.uploaded_by === user.id || profile.role === "admin";
+        const safeCaption = photo.caption || "";
+        const captionDisplay = safeCaption.trim() !== "" ? safeCaption : "No caption";
 
         return `
           <article class="photo-card">
@@ -123,19 +117,39 @@ document.addEventListener("DOMContentLoaded", async () => {
               type="button"
               class="photo-open-btn"
               data-url="${signedData.signedUrl}"
-              data-caption="${safeCaption}"
+              data-caption="${safeCaption.replace(/"/g, "&quot;")}"
             >
-              <img src="${signedData.signedUrl}" alt="Trip photo" class="trip-photo-img" />
+              <img class="photo-thumb" src="${signedData.signedUrl}" alt="${captionDisplay}" />
             </button>
 
             <div class="photo-card-body">
-              <p class="photo-caption">${photo.caption || "No caption"}</p>
-              <p class="small-text">Uploaded by ${uploader}</p>
-              <div class="button-row photo-actions">
+              <p class="photo-caption">${captionDisplay}</p>
+              <div class="photo-uploader-badge">Uploaded by ${uploader}</div>
+
+              ${
+                canEditCaption
+                  ? `
+                    <div class="photo-edit-box">
+                      <input
+                        type="text"
+                        class="edit-caption-input"
+                        value="${safeCaption.replace(/"/g, "&quot;")}"
+                        maxlength="150"
+                        placeholder="Edit caption"
+                      />
+                      <button type="button" class="btn btn-secondary save-caption-btn" data-id="${photo.id}">
+                        Save Caption
+                      </button>
+                    </div>
+                  `
+                  : ""
+              }
+
+              <div class="button-row" style="margin-top: 0.75rem; flex-wrap: wrap;">
                 <a class="btn btn-secondary" href="${signedData.signedUrl}" download>Download</a>
                 ${
                   canDelete
-                    ? `<button class="btn btn-danger delete-photo-btn" data-id="${photo.id}" data-path="${photo.image_path}">Delete</button>`
+                    ? `<button type="button" class="btn btn-primary delete-photo-btn" data-id="${photo.id}" data-path="${photo.image_path}">Delete</button>`
                     : ""
                 }
               </div>
@@ -153,16 +167,37 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
     });
 
+    document.querySelectorAll(".save-caption-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const photoId = btn.dataset.id;
+        const wrapper = btn.closest(".photo-card-body");
+        const input = wrapper.querySelector(".edit-caption-input");
+        const newCaption = input.value.trim();
+
+        const { error: updateError } = await window.supabaseClient
+          .from("trip_photos")
+          .update({ caption: newCaption || null })
+          .eq("id", photoId);
+
+        if (updateError) {
+          console.error("SAVE CAPTION ERROR:", updateError);
+          messageEl.textContent = "Could not update caption.";
+          return;
+        }
+
+        messageEl.textContent = "Caption updated.";
+        loadPhotos();
+      });
+    });
+
     document.querySelectorAll(".delete-photo-btn").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const photoId = btn.dataset.id;
         const imagePath = btn.dataset.path;
-
         const confirmed = window.confirm("Delete this photo?");
         if (!confirmed) return;
 
-        const { error: storageError } = await window.supabaseClient
-          .storage
+        const { error: storageError } = await window.supabaseClient.storage
           .from(BUCKET_NAME)
           .remove([imagePath]);
 
@@ -209,8 +244,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           const safeExt = fileExt ? fileExt.toLowerCase() : "jpg";
           const fileName = `${user.id}/${Date.now()}-${index}-${Math.random().toString(36).slice(2, 10)}.${safeExt}`;
 
-          const { error: uploadError } = await window.supabaseClient
-            .storage
+          const { error: uploadError } = await window.supabaseClient.storage
             .from(BUCKET_NAME)
             .upload(fileName, file, {
               upsert: false,
@@ -251,6 +285,20 @@ document.addEventListener("DOMContentLoaded", async () => {
         messageEl.textContent = `${successCount} uploaded, ${failedCount} failed. Check console for details.`;
       } else {
         messageEl.textContent = `No photos uploaded. Check console for details.`;
+      }
+
+      if (successCount > 0 && typeof window.createNotification === "function") {
+        const person = profile.display_name || profile.email || "A member";
+        await window.createNotification({
+          type: "photo_upload",
+          title: "New Trip Photo Upload",
+          message: `${person} uploaded ${successCount} photo${successCount > 1 ? "s" : ""} to ${TRIP_NAME}.`,
+          link_url: "photos.html",
+          meta: {
+            trip_slug: TRIP_SLUG,
+            count: successCount,
+          },
+        });
       }
 
       loadPhotos();
