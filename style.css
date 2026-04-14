@@ -441,15 +441,21 @@ input:focus {
 .profile-photo-wrap {
   display: flex;
   justify-content: center;
+  align-items: center;
   margin-bottom: 1.5rem;
 }
 
 .profile-photo-preview {
-  width: 220px;
-  height: 220px;
+  width: 220px !important;
+  height: 220px !important;
+  max-width: 220px !important;
+  max-height: 220px !important;
+  min-width: 220px;
+  min-height: 220px;
   border-radius: 18px;
   object-fit: cover;
   display: block;
+  overflow: hidden;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
   background: #eef5fb;
 }
@@ -457,6 +463,8 @@ input:focus {
 .no-photo-box {
   width: 220px;
   height: 220px;
+  max-width: 220px;
+  max-height: 220px;
   border-radius: 18px;
   display: flex;
   align-items: center;
@@ -468,9 +476,19 @@ input:focus {
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
 }
 
+.member-avatar {
+  width: 100%;
+  height: 240px !important;
+  max-height: 240px !important;
+  object-fit: cover;
+  display: block;
+  background: #eef5fb;
+}
+
 .member-avatar-empty {
   width: 100%;
   height: 240px;
+  max-height: 240px;
   display: flex;
   align-items: center;
   justify-content: center;
