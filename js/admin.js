@@ -128,7 +128,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           return;
         }
 
-        const response = await fetch("https://YOUR_PROJECT_REF.supabase.co/functions/v1/create-member", {
+        const response = await fetch("https://vhpbmkdtlajdohhxawno.supabase.co/functions/v1/create-member", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
