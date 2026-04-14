@@ -1,42 +1,54 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login | Cruise Cunts Hub</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
-<body>
-  <main class="container center-page">
-    <section class="card auth-card">
-      <h1>Log In</h1>
-      <p class="subtext">Use your approved member account.</p>
+const form = document.getElementById("login-form");
+const message = document.getElementById("message");
 
-      <form id="login-form" class="form">
-        <label>
-          Email
-          <input type="email" id="email" required />
-        </label>
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  message.textContent = "Logging in...";
 
-        <label>
-          Password
-          <input type="password" id="password" required />
-        </label>
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
 
-        <button type="submit" class="btn btn-primary full-width">Log In</button>
-      </form>
+  try {
+    const { data, error } = await window.supabaseClient.auth.signInWithPassword({
+      email,
+      password
+    });
 
-      <p id="message" class="message"></p>
+    if (error) {
+      message.textContent = error.message;
+      console.error("LOGIN ERROR:", error);
+      return;
+    }
 
-      <div class="auth-links">
-        <a href="signup.html">Need access?</a>
-        <a href="index.html">Back home</a>
-      </div>
-    </section>
-  </main>
+    const user = data.user;
 
-  <script src="js/supabase-client.js"></script>
-  <script src="js/login.js"></script>
-</body>
-</html>
+    const { data: profile, error: profileError } = await window.supabaseClient
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single();
+
+    console.log("LOGGED IN USER:", user);
+    console.log("PROFILE RESULT:", profile, profileError);
+
+    if (profileError) {
+      message.textContent = `Profile error: ${profileError.message}`;
+      return;
+    }
+
+    if (!profile) {
+      message.textContent = "No profile row found for this account.";
+      return;
+    }
+
+    if (!profile.approved) {
+      window.location.href = "pending.html";
+      return;
+    }
+
+    window.location.href = "dashboard.html";
+  } catch (err) {
+    console.error("LOGIN CRASH:", err);
+    message.textContent = "Login crashed. Check browser console.";
+  }
+});
