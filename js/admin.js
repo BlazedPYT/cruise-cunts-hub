@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (error) {
       userList.innerHTML = "Failed to load users.";
-      console.error(error);
+      console.error("LOAD USERS ERROR:", error);
       return;
     }
 
@@ -78,6 +78,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (error) {
           adminMessage.textContent = error.message;
+          console.error("APPROVE ERROR:", error);
           return;
         }
 
@@ -99,6 +100,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (error) {
           adminMessage.textContent = error.message;
+          console.error("ROLE ERROR:", error);
           return;
         }
 
@@ -121,7 +123,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       try {
         const {
           data: { session },
+          error: sessionError,
         } = await window.supabaseClient.auth.getSession();
+
+        if (sessionError) {
+          console.error("SESSION ERROR:", sessionError);
+          createMemberMessage.textContent = "Could not verify session.";
+          return;
+        }
 
         if (!session) {
           createMemberMessage.textContent = "You must be logged in.";
@@ -133,6 +142,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`,
+            apikey: "sb_publishable_CT5E1XrtGMIs9Y8_0j6g6A__ehFemLQ"
           },
           body: JSON.stringify({
             display_name,
@@ -141,10 +151,20 @@ document.addEventListener("DOMContentLoaded", async () => {
           }),
         });
 
-        const result = await response.json();
+        let result = null;
+
+        try {
+          result = await response.json();
+        } catch (jsonError) {
+          console.error("JSON PARSE ERROR:", jsonError);
+        }
+
+        console.log("CREATE MEMBER RESPONSE STATUS:", response.status);
+        console.log("CREATE MEMBER RESPONSE:", result);
 
         if (!response.ok) {
-          createMemberMessage.textContent = result.error || "Could not create account.";
+          createMemberMessage.textContent =
+            result?.error || `Could not create account. Status: ${response.status}`;
           return;
         }
 
