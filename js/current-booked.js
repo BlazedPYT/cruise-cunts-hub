@@ -1,3 +1,5 @@
+// js/current-booked.js
+
 document.addEventListener("DOMContentLoaded", async () => {
   if (!window.supabaseClient) {
     window.location.href = "login.html";
@@ -13,7 +15,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
+  const user = session.user;
   const logoutBtn = document.getElementById("logout-btn");
+
+  if (typeof window.setupNotifications === "function") {
+    await window.setupNotifications(user.id);
+  }
+
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async () => {
       await window.supabaseClient.auth.signOut();
@@ -32,7 +40,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       tabPanels.forEach((panel) => panel.classList.remove("active"));
 
       button.classList.add("active");
-      document.getElementById(target).classList.add("active");
+      const targetPanel = document.getElementById(target);
+      if (targetPanel) {
+        targetPanel.classList.add("active");
+      }
     });
   });
 });
