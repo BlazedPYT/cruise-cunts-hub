@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Current Booked | Cruise Cunts Hub</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div>
+        <h2 class="site-title">Cruise Cunts Hub</h2>
+        <p class="small-text">Private group cruise details</p>
+      </div>
+      <div class="button-row">
+        <a class="btn btn-secondary" href="dashboard.html">Back to Dashboard</a>
+        <button id="logout-btn" class="btn btn-primary">Log Out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container page-space">
+    <section class="card hero-card">
+      <span class="pill">🚢 Currently Booked</span>
+      <h1>Norwegian Jewel | Miami Caribbean Cruise</h1>
+      <p class="lead">
+        This is the one Jonathan and Daniel already locked in. Use this page to stalk the ship,
+        fantasize responsibly, and decide whether you’re joining the mess.
+      </p>
+
+      <div class="info-grid">
+        <div class="mini-card">
+          <h3>Ship</h3>
+          <p>Norwegian Jewel</p>
+        </div>
+        <div class="mini-card">
+          <h3>Embark</h3>
+          <p>Miami, Florida</p>
+        </div>
+        <div class="mini-card">
+          <h3>Nights</h3>
+          <p>11 days</p>
+        </div>
+        <div class="mini-card">
+          <h3>Status</h3>
+          <p>Booked for 2</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="tab-row">
+        <button class="tab-btn active" data-tab="tab-overview">Overview</button>
+        <button class="tab-btn" data-tab="tab-itinerary">Itinerary</button>
+        <button class="tab-btn" data-tab="tab-food">Restaurants</button>
+        <button class="tab-btn" data-tab="tab-bars">Bars & Nightlife</button>
+        <button class="tab-btn" data-tab="tab-links">Official Links</button>
+      </div>
+
+      <div id="tab-overview" class="tab-panel active">
+        <h2>Why this ship is hot</h2>
+        <p>
+          Norwegian Jewel is one of NCL’s Jewel-class ships and got refurbished in 2025,
+          which means it has that older-ship layout people often love, but with fresher spaces.
+        </p>
+        <p>
+          It carries 2,368 guests at double occupancy with 1,069 crew, so it still feels
+          like a real cruise ship experience without being one of those giant floating cities.
+        </p>
+        <p>
+          The easiest selling points for this one: tropical itinerary, lots of sea days to
+          actually hang out, plenty of bars, a nice spread of included food, and enough
+          specialty dining to turn the trip into a whole group event.
+        </p>
+
+        <div class="info-grid">
+          <div class="mini-card">
+            <h3>Refurbished</h3>
+            <p>2025</p>
+          </div>
+          <div class="mini-card">
+            <h3>Guests</h3>
+            <p>2,368</p>
+          </div>
+          <div class="mini-card">
+            <h3>Crew</h3>
+            <p>1,069</p>
+          </div>
+          <div class="mini-card">
+            <h3>Dining & Bars</h3>
+            <p>25+ venues</p>
+          </div>
+        </div>
+
+        <div class="ship-image-grid">
+          <img
+            src="https://www.ncl.com/sites/default/files/styles/870x485/public/2023-08/Jewel-Ship-Hero-Desktop.jpg"
+            alt="Norwegian Jewel exterior"
+            onerror="this.style.display='none'"
+          />
+          <img
+            src="https://www.ncl.com/sites/default/files/styles/870x485/public/2023-07/Jewel_Cagneys_700x475.jpg"
+            alt="Cagney's Steakhouse"
+            onerror="this.style.display='none'"
+          />
+        </div>
+      </div>
+
+      <div id="tab-itinerary" class="tab-panel">
+        <h2>Booked itinerary</h2>
+        <div class="table-wrap">
+          <table class="pretty-table">
+            <thead>
+              <tr>
+                <th>Day</th>
+                <th>Port</th>
+                <th>Arrive</th>
+                <th>Depart</th>
+                <th>Booked</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Tue</td><td>Miami, Florida</td><td>---</td><td>4:00 PM</td><td>2</td></tr>
+              <tr><td>Wed</td><td>Great Stirrup Cay, Bahamas</td><td>7:00 AM</td><td>3:00 PM</td><td>2</td></tr>
+              <tr><td>Thu</td><td>At Sea</td><td>---</td><td>---</td><td>2</td></tr>
+              <tr><td>Fri</td><td>Cabo Rojo, Dominican Republic</td><td>9:00 AM</td><td>4:00 PM</td><td>2</td></tr>
+              <tr><td>Sat</td><td>Oranjestad, Aruba</td><td>11:00 AM</td><td>8:00 PM</td><td>2</td></tr>
+              <tr><td>Sun</td><td>Willemstad, Curaçao</td><td>7:00 AM</td><td>7:00 PM</td><td>2</td></tr>
+              <tr><td>Mon</td><td>At Sea</td><td>---</td><td>---</td><td>2</td></tr>
+              <tr><td>Tue</td><td>Falmouth, Jamaica</td><td>7:00 AM</td><td>5:00 PM</td><td>2</td></tr>
+              <tr><td>Wed</td><td>George Town, Grand Cayman</td><td>7:00 AM</td><td>5:00 PM</td><td>2</td></tr>
+              <tr><td>Thu</td><td>At Sea</td><td>---</td><td>---</td><td>2</td></tr>
+              <tr><td>Fri</td><td>Miami, Florida (Flight Departure)</td><td>7:00 AM</td><td>---</td><td>2</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="ship-image-grid">
+          <img src="images/route-map.png" alt="Current booked cruise route map" />
+        </div>
+      </div>
+
+      <div id="tab-food" class="tab-panel">
+        <h2>Restaurants worth getting excited about</h2>
+        <p class="lead">
+          This is where the ship starts selling itself.
+        </p>
+
+        <div class="info-grid">
+          <div class="mini-card">
+            <h3>O’Sheehan’s</h3>
+            <p>Deck 8 • Complimentary • 24-hour pub food</p>
+          </div>
+          <div class="mini-card">
+            <h3>Garden Café</h3>
+            <p>Deck 12 • Complimentary buffet • breakfast, lunch, dinner</p>
+          </div>
+          <div class="mini-card">
+            <h3>Azura</h3>
+            <p>Deck 6 • Complimentary main dining</p>
+          </div>
+          <div class="mini-card">
+            <h3>Tsar’s Palace</h3>
+            <p>Deck 6 • Complimentary main dining with ocean views</p>
+          </div>
+          <div class="mini-card">
+            <h3>The Great Outdoors</h3>
+            <p>Deck 12 • Complimentary outdoor buffet/grill with ocean views</p>
+          </div>
+          <div class="mini-card">
+            <h3>Topsiders Bar & Grill</h3>
+            <p>Deck 12 • Complimentary pool grill</p>
+          </div>
+        </div>
+
+        <h3 class="section-heading">Specialty spots</h3>
+        <div class="info-grid">
+          <div class="mini-card">
+            <h3>Cagney’s Steakhouse</h3>
+            <p>Deck 13 • Premium steakhouse • classic date-night energy</p>
+          </div>
+          <div class="mini-card">
+            <h3>Teppanyaki</h3>
+            <p>Deck 7 • Shared-table hibachi-style fun</p>
+          </div>
+          <div class="mini-card">
+            <h3>La Cucina</h3>
+            <p>Deck 12 • Italian • pasta, espresso, comfort mood</p>
+          </div>
+          <div class="mini-card">
+            <h3>Le Bistro</h3>
+            <p>Deck 6 • French • romantic and dramatic in a good way</p>
+          </div>
+          <div class="mini-card">
+            <h3>Chin Chin</h3>
+            <p>Deck 7 • Asian fusion • noodles, wok dishes, soups</p>
+          </div>
+          <div class="mini-card">
+            <h3>Moderno Churrascaria</h3>
+            <p>Deck 13 • Brazilian steakhouse • meats carved tableside</p>
+          </div>
+          <div class="mini-card">
+            <h3>Sushi</h3>
+            <p>Deck 7 • contemporary sushi bar</p>
+          </div>
+        </div>
+
+        <div class="notice-box">
+          <strong>Estimated specialty dining cost:</strong>
+          NCL says the listed specialty restaurants on Norwegian Jewel generally carry a
+          cover charge in the <strong>$40–$60 per person</strong> range unless covered by a package.
+        </div>
+
+        <p>
+          Translation: the included food is already solid, but the specialty spots are where
+          the group can do “dress a little cuter and act like we have money” dinners.
+        </p>
+      </div>
+
+      <div id="tab-bars" class="tab-panel">
+        <h2>Bars, drinks, and late-night behavior</h2>
+
+        <div class="info-grid">
+          <div class="mini-card">
+            <h3>Bliss Ultra Lounge</h3>
+            <p>Nightlife energy, dancing, and actual group-night-out potential.</p>
+          </div>
+          <div class="mini-card">
+            <h3>Magnum’s Champagne & Wine Bar</h3>
+            <p>Classier mood if somebody wants to pretend they’re elegant.</p>
+          </div>
+          <div class="mini-card">
+            <h3>Maltings Beer & Whiskey Bar</h3>
+            <p>Whiskey-forward hangout for a more chill vibe.</p>
+          </div>
+          <div class="mini-card">
+            <h3>Pool bars</h3>
+            <p>Umbrella drinks, day drinking, tanning, bad decisions.</p>
+          </div>
+          <div class="mini-card">
+            <h3>Vibe Beach Club</h3>
+            <p>Adults-only retreat with ocean views, loungers, and an oversized hot tub.</p>
+          </div>
+          <div class="mini-card">
+            <h3>Spinnaker Lounge</h3>
+            <p>Big views and a classic meetup spot for a cruise friend group.</p>
+          </div>
+        </div>
+
+        <p>
+          This is the part that really fits your group story. Since y’all literally met on a ship,
+          the mix of bars, lounges, sea days, and late-night spaces is probably the biggest selling
+          point for getting everyone back together.
+        </p>
+      </div>
+
+      <div id="tab-links" class="tab-panel">
+        <h2>Official NCL links</h2>
+
+        <div class="link-list">
+          <a class="link-card" href="https://www.ncl.com/cruise-ships/norwegian-jewel" target="_blank" rel="noopener noreferrer">
+            <strong>Norwegian Jewel ship page</strong>
+            <span>Main ship overview, facts, photos, onboard summary</span>
+          </a>
+
+          <a class="link-card" href="https://www.ncl.com/cruise-ships/norwegian-jewel/whats-on-board/specialty-dining" target="_blank" rel="noopener noreferrer">
+            <strong>Dining on Norwegian Jewel</strong>
+            <span>Complimentary + specialty dining details</span>
+          </a>
+
+          <a class="link-card" href="https://www.ncl.com/cruise-ships/norwegian-jewel/whats-on-board/bars-and-lounges" target="_blank" rel="noopener noreferrer">
+            <strong>Bars & lounges</strong>
+            <span>Ship nightlife, lounges, drinks, and hangouts</span>
+          </a>
+
+          <a class="link-card" href="https://www.ncl.com/cruise-ships/norwegian-jewel/deck-plans" target="_blank" rel="noopener noreferrer">
+            <strong>Deck plans</strong>
+            <span>Best page for stalking where everything is before you sail</span>
+          </a>
+
+          <a class="link-card" href="https://www.ncl.com/sites/default/files/norwegian_jewel_ship_map_guide_06_13_25.pdf" target="_blank" rel="noopener noreferrer">
+            <strong>Official ship map guide PDF</strong>
+            <span>Fast visual overview of key venues on the ship</span>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/supabase-client.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/current-booked.js"></script>
+</body>
+</html>
