@@ -17,8 +17,14 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  min-height: 100%;
+}
+
 body {
   margin: 0;
+  min-height: 100vh;
   font-family: Inter, Arial, Helvetica, sans-serif;
   background: linear-gradient(180deg, #eef8ff 0%, #fdfcff 100%);
   color: var(--text);
@@ -36,8 +42,9 @@ a {
 
 .center-page {
   min-height: 100vh;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 40px 0;
 }
 
@@ -60,6 +67,7 @@ a {
 
 .auth-card {
   width: min(520px, 100%);
+  margin: 0 auto;
 }
 
 h1, h2, h3 {
