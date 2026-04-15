@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const authData = await requireAuth(false);
   if (!authData) return;
 
-  const { profile, user } = authData;
+  const { profile } = authData;
   const userList = document.getElementById("user-list");
   const adminMessage = document.getElementById("admin-message");
   const logoutBtn = document.getElementById("logout-btn");
@@ -12,10 +12,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (profile.role !== "admin") {
     window.location.href = "dashboard.html";
     return;
-  }
-
-  if (typeof window.setupNotifications === "function") {
-    await window.setupNotifications(user.id);
   }
 
   if (logoutBtn) {
@@ -32,33 +28,46 @@ document.addEventListener("DOMContentLoaded", async () => {
         error: sessionError,
       } = await window.supabaseClient.auth.getSession();
 
-      if (sessionError || !session) {
+      if (sessionError || !session?.access_token) {
         console.error("ADMIN MEMBER TOOLS SESSION ERROR:", sessionError);
         return {
-          error: "You must be logged in to perform this action.",
+          error: "You must be logged in as an admin.",
         };
       }
 
-      const { data, error } = await window.supabaseClient.functions.invoke("admin-member-tools", {
-        body: payload,
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
+      console.log("ADMIN TOKEN FOUND:", !!session.access_token);
+      console.log("ADMIN USER ID:", session.user?.id);
 
-      if (error) {
-        console.error("ADMIN MEMBER TOOLS ERROR:", error);
-
-        if (error.context) {
-          console.error("ADMIN MEMBER TOOLS ERROR CONTEXT:", error.context);
+      const response = await fetch(
+        "https://vhpbmkdtlajdohhxawno.supabase.co/functions/v1/admin-member-tools",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify(payload),
         }
+      );
 
+      let result = null;
+
+      try {
+        result = await response.json();
+      } catch (jsonError) {
+        console.error("ADMIN MEMBER TOOLS JSON PARSE ERROR:", jsonError);
+      }
+
+      console.log("ADMIN MEMBER TOOLS STATUS:", response.status);
+      console.log("ADMIN MEMBER TOOLS RESPONSE:", result);
+
+      if (!response.ok) {
         return {
-          error: error.message || "Edge Function returned an error.",
+          error: result?.error || `Request failed with status ${response.status}`,
         };
       }
 
-      return data || {};
+      return result || {};
     } catch (err) {
       console.error("ADMIN MEMBER TOOLS CRASH:", err);
       return {
@@ -68,6 +77,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   async function loadUsers() {
+    if (!userList) return;
+
     userList.innerHTML = "Loading users...";
 
     const { data, error } = await window.supabaseClient
@@ -88,32 +99,26 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     userList.innerHTML = "";
 
-    data.forEach((member) => {
+    data.forEach((user) => {
       const item = document.createElement("div");
       item.className = "user-item";
 
-      const isSelf = member.id === user.id;
-      const memberRole = member.role || "member";
-
       item.innerHTML = `
-        <h3>${member.display_name || "No display name"}</h3>
-        <p class="user-meta"><strong>Email:</strong> ${member.email || "No email"}</p>
-        <p class="user-meta"><strong>Approved:</strong> ${member.approved ? "Yes" : "No"}</p>
-        <p class="user-meta"><strong>Role:</strong> ${memberRole}</p>
+        <h3>${user.display_name || "No display name"}</h3>
+        <p class="user-meta"><strong>Email:</strong> ${user.email || "No email"}</p>
+        <p class="user-meta"><strong>Approved:</strong> ${user.approved ? "Yes" : "No"}</p>
+        <p class="user-meta"><strong>Role:</strong> ${user.role || "member"}</p>
         <div class="user-actions">
-          <button class="btn btn-primary approve-btn" data-id="${member.id}" data-approved="${member.approved}">
-            ${member.approved ? "Unapprove" : "Approve"}
+          <button class="btn btn-primary approve-btn" data-id="${user.id}" data-approved="${user.approved}">
+            ${user.approved ? "Unapprove" : "Approve"}
           </button>
-
-          <button class="btn btn-secondary role-btn" data-id="${member.id}" data-role="${memberRole}" ${isSelf ? "disabled" : ""}>
-            ${memberRole === "admin" ? "Make Member" : "Make Admin"}
+          <button class="btn btn-secondary role-btn" data-id="${user.id}" data-role="${user.role}">
+            ${user.role === "admin" ? "Make Member" : "Make Admin"}
           </button>
-
-          <button class="btn btn-secondary reset-password-btn" data-id="${member.id}">
+          <button class="btn btn-secondary reset-password-btn" data-id="${user.id}">
             Reset Password
           </button>
-
-          <button class="btn btn-danger delete-user-btn" data-id="${member.id}" ${isSelf ? "disabled" : ""}>
+          <button class="btn btn-danger delete-user-btn" data-id="${user.id}">
             Delete User
           </button>
         </div>
@@ -137,22 +142,20 @@ document.addEventListener("DOMContentLoaded", async () => {
           .eq("id", id);
 
         if (error) {
-          adminMessage.textContent = error.message;
+          if (adminMessage) adminMessage.textContent = error.message;
           console.error("APPROVE ERROR:", error);
           return;
         }
 
-        adminMessage.textContent = "Approval updated.";
+        if (adminMessage) adminMessage.textContent = "Approval updated.";
         loadUsers();
       });
     });
 
     document.querySelectorAll(".role-btn").forEach((btn) => {
       btn.addEventListener("click", async () => {
-        if (btn.disabled) return;
-
         const id = btn.dataset.id;
-        const currentRole = btn.dataset.role || "member";
+        const currentRole = btn.dataset.role;
         const newRole = currentRole === "admin" ? "member" : "admin";
 
         const { error } = await window.supabaseClient
@@ -161,12 +164,12 @@ document.addEventListener("DOMContentLoaded", async () => {
           .eq("id", id);
 
         if (error) {
-          adminMessage.textContent = error.message;
+          if (adminMessage) adminMessage.textContent = error.message;
           console.error("ROLE ERROR:", error);
           return;
         }
 
-        adminMessage.textContent = "Role updated.";
+        if (adminMessage) adminMessage.textContent = "Role updated.";
         loadUsers();
       });
     });
@@ -178,7 +181,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (!newPassword) return;
 
-        adminMessage.textContent = "Resetting password...";
+        if (newPassword.length < 6) {
+          if (adminMessage) adminMessage.textContent = "Password must be at least 6 characters.";
+          return;
+        }
+
+        if (adminMessage) adminMessage.textContent = "Resetting password...";
 
         const result = await callAdminMemberTools({
           action: "reset_password",
@@ -189,24 +197,25 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.log("RESET PASSWORD RESULT:", result);
 
         if (result.error) {
-          adminMessage.textContent = result.error;
+          if (adminMessage) adminMessage.textContent = result.error;
           return;
         }
 
-        adminMessage.textContent = "Password reset successfully.";
+        if (adminMessage) adminMessage.textContent = "Password reset successfully.";
       });
     });
 
     document.querySelectorAll(".delete-user-btn").forEach((btn) => {
       btn.addEventListener("click", async () => {
-        if (btn.disabled) return;
-
         const id = btn.dataset.id;
-        const confirmed = confirm("Are you sure you want to permanently delete this user? This cannot be undone.");
+
+        const confirmed = confirm(
+          "Are you sure you want to permanently delete this user? This cannot be undone."
+        );
 
         if (!confirmed) return;
 
-        adminMessage.textContent = "Deleting user...";
+        if (adminMessage) adminMessage.textContent = "Deleting user...";
 
         const result = await callAdminMemberTools({
           action: "delete_user",
@@ -216,11 +225,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.log("DELETE USER RESULT:", result);
 
         if (result.error) {
-          adminMessage.textContent = result.error;
+          if (adminMessage) adminMessage.textContent = result.error;
           return;
         }
 
-        adminMessage.textContent = "User deleted successfully.";
+        if (adminMessage) adminMessage.textContent = "User deleted successfully.";
         loadUsers();
       });
     });
@@ -230,36 +239,61 @@ document.addEventListener("DOMContentLoaded", async () => {
     createMemberForm.addEventListener("submit", async (e) => {
       e.preventDefault();
 
+      if (!createMemberMessage) return;
+
       createMemberMessage.textContent = "Creating account...";
 
-      const display_name = document.getElementById("new-member-name").value.trim();
-      const email = document.getElementById("new-member-email").value.trim();
-      const password = document.getElementById("new-member-password").value.trim();
-
-      if (!email || !password) {
-        createMemberMessage.textContent = "Email and temporary password are required.";
-        return;
-      }
+      const display_name = document.getElementById("new-member-name")?.value.trim() || "";
+      const email = document.getElementById("new-member-email")?.value.trim() || "";
+      const password = document.getElementById("new-member-password")?.value.trim() || "";
 
       try {
-        const { data, error } = await window.supabaseClient.functions.invoke("swift-endpoint", {
-          body: {
-            display_name,
-            email,
-            password,
-          },
-        });
+        const {
+          data: { session },
+          error: sessionError,
+        } = await window.supabaseClient.auth.getSession();
 
-        console.log("CREATE MEMBER DATA:", data);
-        console.log("CREATE MEMBER ERROR:", error);
-
-        if (error) {
-          createMemberMessage.textContent = error.message || "Could not create account.";
+        if (sessionError) {
+          console.error("SESSION ERROR:", sessionError);
+          createMemberMessage.textContent = "Could not verify session.";
           return;
         }
 
-        if (data?.error) {
-          createMemberMessage.textContent = data.error;
+        if (!session) {
+          createMemberMessage.textContent = "You must be logged in.";
+          return;
+        }
+
+        const response = await fetch(
+          "https://vhpbmkdtlajdohhxawno.supabase.co/functions/v1/swift-endpoint",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              display_name,
+              email,
+              password,
+            }),
+          }
+        );
+
+        let result = null;
+
+        try {
+          result = await response.json();
+        } catch (jsonError) {
+          console.error("JSON PARSE ERROR:", jsonError);
+        }
+
+        console.log("CREATE MEMBER RESPONSE STATUS:", response.status);
+        console.log("CREATE MEMBER RESPONSE:", result);
+
+        if (!response.ok) {
+          createMemberMessage.textContent =
+            result?.error || `Could not create account. Status: ${response.status}`;
           return;
         }
 
