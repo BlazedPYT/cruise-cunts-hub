@@ -27,8 +27,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   async function callAdminMemberTools(payload) {
     try {
+      const {
+        data: { session },
+        error: sessionError,
+      } = await window.supabaseClient.auth.getSession();
+
+      if (sessionError || !session) {
+        console.error("ADMIN MEMBER TOOLS SESSION ERROR:", sessionError);
+        return {
+          error: "You must be logged in to perform this action.",
+        };
+      }
+
       const { data, error } = await window.supabaseClient.functions.invoke("admin-member-tools", {
         body: payload,
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) {
