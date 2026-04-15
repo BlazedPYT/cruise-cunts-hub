@@ -26,16 +26,30 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   async function callAdminMemberTools(payload) {
-    const { data, error } = await window.supabaseClient.functions.invoke("admin-member-tools", {
-      body: payload,
-    });
+    try {
+      const { data, error } = await window.supabaseClient.functions.invoke("admin-member-tools", {
+        body: payload,
+      });
 
-    if (error) {
-      console.error("ADMIN MEMBER TOOLS ERROR:", error);
-      return { error: error.message || "Request failed." };
+      if (error) {
+        console.error("ADMIN MEMBER TOOLS ERROR:", error);
+
+        if (error.context) {
+          console.error("ADMIN MEMBER TOOLS ERROR CONTEXT:", error.context);
+        }
+
+        return {
+          error: error.message || "Edge Function returned an error.",
+        };
+      }
+
+      return data || {};
+    } catch (err) {
+      console.error("ADMIN MEMBER TOOLS CRASH:", err);
+      return {
+        error: err.message || "Request failed.",
+      };
     }
-
-    return data || {};
   }
 
   async function loadUsers() {
@@ -157,6 +171,8 @@ document.addEventListener("DOMContentLoaded", async () => {
           new_password: newPassword,
         });
 
+        console.log("RESET PASSWORD RESULT:", result);
+
         if (result.error) {
           adminMessage.textContent = result.error;
           return;
@@ -181,6 +197,8 @@ document.addEventListener("DOMContentLoaded", async () => {
           action: "delete_user",
           user_id: id,
         });
+
+        console.log("DELETE USER RESULT:", result);
 
         if (result.error) {
           adminMessage.textContent = result.error;
