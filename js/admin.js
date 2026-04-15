@@ -21,34 +21,35 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  async function callAdminMemberTools(payload) {
-    try {
-      const {
-        data: { session },
-        error: sessionError,
-      } = await window.supabaseClient.auth.getSession();
+async function callAdminMemberTools(payload) {
+  try {
+    const {
+      data: { session },
+      error: sessionError,
+    } = await window.supabaseClient.auth.getSession();
 
-      if (sessionError || !session?.access_token) {
-        console.error("ADMIN MEMBER TOOLS SESSION ERROR:", sessionError);
-        return {
-          error: "You must be logged in as an admin.",
-        };
+    if (sessionError || !session?.access_token) {
+      console.error("ADMIN MEMBER TOOLS SESSION ERROR:", sessionError);
+      return {
+        error: "You must be logged in as an admin.",
+      };
+    }
+
+    console.log("ADMIN TOKEN FOUND:", !!session.access_token);
+    console.log("ADMIN USER ID:", session.user?.id);
+    console.log("SESSION ACCESS TOKEN:", session.access_token);
+
+    const response = await fetch(
+      "https://vhpbmkdtlajdohhxawno.supabase.co/functions/v1/admin-member-tools",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify(payload),
       }
-
-      console.log("ADMIN TOKEN FOUND:", !!session.access_token);
-      console.log("ADMIN USER ID:", session.user?.id);
-
-      const response = await fetch(
-        "https://vhpbmkdtlajdohhxawno.supabase.co/functions/v1/admin-member-tools",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify(payload),
-        }
-      );
+    );
 
       let result = null;
 
