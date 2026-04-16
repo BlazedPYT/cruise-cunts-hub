@@ -20,6 +20,7 @@ signupForm.addEventListener("submit", async (e) => {
       email,
       password,
       options: {
+        emailRedirectTo: "https://blazedpyt.github.io/cruise-cunts-hub/login.html",
         data: {
           display_name
         }
