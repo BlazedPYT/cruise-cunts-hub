@@ -1,22 +1,11 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  const logoutBtn =
-    document.getElementById("logout-btn");
+  const logoutBtn = document.getElementById("logout-btn");
+  const requestBtn = document.getElementById("reservation-request-btn");
+  const requestNote = document.getElementById("reservation-request-note");
+  const requestMessage = document.getElementById("reservation-request-message");
 
-  const requestBtn =
-    document.getElementById("reservation-request-btn");
-
-  const requestNote =
-    document.getElementById("reservation-request-note");
-
-  const requestMessage =
-    document.getElementById("reservation-request-message");
-
-  const tabButtons =
-    document.querySelectorAll(".tab-btn");
-
-  const tabPanels =
-    document.querySelectorAll(".tab-panel");
-
+  const tabButtons = document.querySelectorAll(".tab-btn");
+  const tabPanels = document.querySelectorAll(".tab-panel");
 
   /*
     --------------------------------------------------
@@ -26,8 +15,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   tabButtons.forEach((button) => {
     button.addEventListener("click", () => {
-      const target =
-        button.dataset.tab;
+      const target = button.dataset.tab;
 
       tabButtons.forEach((btn) => {
         btn.classList.remove("active");
@@ -39,15 +27,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       button.classList.add("active");
 
-      const targetPanel =
-        document.getElementById(target);
+      const targetPanel = document.getElementById(target);
 
       if (targetPanel) {
         targetPanel.classList.add("active");
       }
     });
   });
-
 
   /*
     --------------------------------------------------
@@ -56,9 +42,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   */
 
   if (!window.supabaseClient) {
-    console.error(
-      "Supabase client did not load."
-    );
+    console.error("Supabase client did not load.");
 
     if (requestMessage) {
       requestMessage.textContent =
@@ -67,7 +51,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     return;
   }
-
 
   /*
     --------------------------------------------------
@@ -81,77 +64,46 @@ document.addEventListener("DOMContentLoaded", async () => {
     const {
       data: { session },
       error: sessionError,
-    } =
-      await window.supabaseClient.auth.getSession();
-
+    } = await window.supabaseClient.auth.getSession();
 
     if (sessionError) {
-      console.error(
-        "SESSION ERROR:",
-        sessionError
-      );
+      console.error("SESSION ERROR:", sessionError);
     }
-
 
     if (session?.user) {
-      currentUser =
-        session.user;
+      currentUser = session.user;
     }
   } catch (err) {
-    console.error(
-      "GET SESSION CRASH:",
-      err
-    );
+    console.error("GET SESSION CRASH:", err);
   }
-
-
-  /*
-    If session restoration was delayed,
-    ask Supabase directly for the user.
-  */
 
   if (!currentUser) {
     try {
       const {
         data: { user },
         error: userError,
-      } =
-        await window.supabaseClient.auth.getUser();
-
+      } = await window.supabaseClient.auth.getUser();
 
       if (userError) {
-        console.error(
-          "GET USER ERROR:",
-          userError
-        );
+        console.error("GET USER ERROR:", userError);
       }
-
 
       if (user) {
-        currentUser =
-          user;
+        currentUser = user;
       }
     } catch (err) {
-      console.error(
-        "GET USER CRASH:",
-        err
-      );
+      console.error("GET USER CRASH:", err);
     }
   }
 
-
   /*
-    Do NOT automatically redirect repeatedly.
+    --------------------------------------------------
+    NO SESSION
+    --------------------------------------------------
   */
 
   if (!currentUser) {
-    console.warn(
-      "No active login session found."
-    );
-
-    const main =
-      document.querySelector("main");
-
+    const main = document.querySelector("main");
 
     if (main) {
       main.innerHTML = `
@@ -194,10 +146,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-
-  const user =
-    currentUser;
-
+  const user = currentUser;
 
   /*
     --------------------------------------------------
@@ -205,22 +154,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     --------------------------------------------------
   */
 
-  if (
-    typeof window.setupNotifications ===
-    "function"
-  ) {
+  if (typeof window.setupNotifications === "function") {
     try {
-      await window.setupNotifications(
-        user.id
-      );
+      await window.setupNotifications(user.id);
     } catch (err) {
-      console.error(
-        "NOTIFICATION SETUP ERROR:",
-        err
-      );
+      console.error("NOTIFICATION SETUP ERROR:", err);
     }
   }
-
 
   /*
     --------------------------------------------------
@@ -229,25 +169,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   */
 
   if (logoutBtn) {
-    logoutBtn.addEventListener(
-      "click",
-      async () => {
-
-        try {
-          await window.supabaseClient.auth.signOut();
-        } catch (err) {
-          console.error(
-            "LOGOUT ERROR:",
-            err
-          );
-        }
-
-        window.location.href =
-          "login.html";
+    logoutBtn.addEventListener("click", async () => {
+      try {
+        await window.supabaseClient.auth.signOut();
+      } catch (err) {
+        console.error("LOGOUT ERROR:", err);
       }
-    );
-  }
 
+      window.location.href = "login.html";
+    });
+  }
 
   /*
     --------------------------------------------------
@@ -260,44 +191,28 @@ document.addEventListener("DOMContentLoaded", async () => {
       return false;
     }
 
-
     try {
-      const {
-        data,
-        error,
-      } =
-        await window.supabaseClient
-          .from("cruise_private_info")
-          .select("reservation_number")
-          .eq(
-            "id",
-            "current_cruise"
-          )
-          .maybeSingle();
-
+      const { data, error } = await window.supabaseClient
+        .from("cruise_private_info")
+        .select("reservation_number")
+        .eq("id", "current_cruise")
+        .maybeSingle();
 
       if (error) {
-        console.error(
-          "PRIVATE CRUISE INFO ERROR:",
-          error
-        );
-
+        console.error("PRIVATE CRUISE INFO ERROR:", error);
         return false;
       }
-
 
       /*
-        RLS returns no accessible row if the user
-        has not been approved.
+        If RLS does not allow this user to see the row,
+        data will be null.
       */
 
-      if (
-        !data ||
-        !data.reservation_number
-      ) {
+      if (!data?.reservation_number) {
         return false;
       }
 
+      const reservationNumber = data.reservation_number;
 
       requestMessage.innerHTML = `
         <div
@@ -313,52 +228,43 @@ document.addEventListener("DOMContentLoaded", async () => {
 
           <p>
             <strong>
-              Group Reservation Number:
+              Group Reservation Number
             </strong>
           </p>
 
           <p
             style="
-              font-size: 1.35rem;
+              font-size: 1.4rem;
               font-weight: 700;
-              letter-spacing: 0.04em;
+              letter-spacing: 0.05em;
             "
           >
-            ${data.reservation_number}
+            ${reservationNumber}
           </p>
 
-          <p class="small-text">
+          <p>
             Contact Norwegian Cruise Line and tell them
             you are traveling with this reservation.
-            Ask whether your reservations can be associated
-            and whether nearby staterooms are available.
           </p>
 
           <p class="small-text">
-            Nearby rooms are not guaranteed and remain
-            subject to NCL availability.
+            Ask whether your reservations can be associated
+            and whether nearby staterooms are available.
+            Nearby rooms are not guaranteed.
           </p>
         </div>
       `;
 
-
       if (requestBtn) {
-        requestBtn.disabled =
-          true;
-
-        requestBtn.textContent =
-          "Reservation Info Unlocked";
+        requestBtn.disabled = true;
+        requestBtn.textContent = "Reservation Info Unlocked";
       }
-
 
       if (requestNote) {
-        requestNote.disabled =
-          true;
+        requestNote.disabled = true;
       }
 
-
       return true;
-
     } catch (err) {
       console.error(
         "LOAD PRIVATE RESERVATION INFO CRASH:",
@@ -369,7 +275,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-
   /*
     --------------------------------------------------
     CHECK EXISTING REQUEST
@@ -377,39 +282,24 @@ document.addEventListener("DOMContentLoaded", async () => {
   */
 
   async function checkExistingReservationRequest() {
-    if (
-      !requestBtn ||
-      !requestMessage
-    ) {
+    if (!requestBtn || !requestMessage) {
       return;
     }
 
-
     try {
-      const {
-        data,
-        error,
-      } =
-        await window.supabaseClient
-          .from("reservation_requests")
-          .select(`
-            id,
-            status,
-            note,
-            created_at
-          `)
-          .eq(
-            "user_id",
-            user.id
-          )
-          .order(
-            "created_at",
-            {
-              ascending: false,
-            }
-          )
-          .limit(1);
-
+      const { data, error } = await window.supabaseClient
+        .from("reservation_requests")
+        .select(`
+          id,
+          status,
+          note,
+          created_at
+        `)
+        .eq("user_id", user.id)
+        .order("created_at", {
+          ascending: false,
+        })
+        .limit(1);
 
       if (error) {
         console.error(
@@ -423,71 +313,49 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
-
-      if (
-        !data ||
-        data.length === 0
-      ) {
-        requestBtn.disabled =
-          false;
-
+      if (!data || data.length === 0) {
+        requestBtn.disabled = false;
         requestBtn.textContent =
           "Request Group Reservation Info";
+
+        requestMessage.textContent = "";
 
         return;
       }
 
-
-      const latestRequest =
-        data[0];
-
+      const latestRequest = data[0];
 
       /*
-        APPROVED OR COMPLETED:
-        Try to reveal the protected number.
+        APPROVED / COMPLETED
       */
 
       if (
-        latestRequest.status ===
-          "approved" ||
-        latestRequest.status ===
-          "completed"
+        latestRequest.status === "approved" ||
+        latestRequest.status === "completed"
       ) {
         const revealed =
           await loadApprovedReservationInfo();
-
 
         if (revealed) {
           return;
         }
 
-
-        requestBtn.disabled =
-          true;
-
-        requestBtn.textContent =
-          "Approved";
+        requestBtn.disabled = true;
+        requestBtn.textContent = "Approved";
 
         requestMessage.textContent =
-          "Your request was approved, but the reservation information could not be loaded. Contact an admin.";
+          "Your request is approved, but the reservation information could not be loaded. Please contact an admin.";
 
         return;
       }
-
 
       /*
         PENDING
       */
 
-      if (
-        latestRequest.status ===
-        "pending"
-      ) {
-        requestBtn.disabled =
-          true;
-
-        requestBtn.textContent =
-          "Request Pending";
+      if (latestRequest.status === "pending") {
+        requestBtn.disabled = true;
+        requestBtn.textContent = "Request Pending";
 
         requestMessage.textContent =
           "Your request is waiting for an admin.";
@@ -495,17 +363,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
-
       /*
         DECLINED
       */
 
-      if (
-        latestRequest.status ===
-        "declined"
-      ) {
-        requestBtn.disabled =
-          false;
+      if (latestRequest.status === "declined") {
+        requestBtn.disabled = false;
 
         requestBtn.textContent =
           "Request Group Reservation Info";
@@ -515,7 +378,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         return;
       }
-
     } catch (err) {
       console.error(
         "RESERVATION REQUEST CHECK CRASH:",
@@ -527,178 +389,115 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-
   /*
     --------------------------------------------------
-    CREATE NEW REQUEST
+    CREATE REQUEST
     --------------------------------------------------
   */
 
   if (requestBtn) {
-    requestBtn.addEventListener(
-      "click",
-      async () => {
+    requestBtn.addEventListener("click", async () => {
+      requestBtn.disabled = true;
+      requestMessage.textContent = "Sending request...";
 
-        requestBtn.disabled =
-          true;
+      const note =
+        requestNote?.value?.trim() || "";
 
-        requestMessage.textContent =
-          "Sending request...";
+      try {
+        const {
+          data: profile,
+          error: profileError,
+        } = await window.supabaseClient
+          .from("profiles")
+          .select(`
+            display_name,
+            email
+          `)
+          .eq("id", user.id)
+          .single();
 
-
-        const note =
-          requestNote?.value?.trim() ||
-          "";
-
-
-        try {
-          /*
-            Load member profile for notification.
-          */
-
-          const {
-            data: profile,
-            error: profileError,
-          } =
-            await window.supabaseClient
-              .from("profiles")
-              .select(`
-                display_name,
-                email
-              `)
-              .eq(
-                "id",
-                user.id
-              )
-              .single();
-
-
-          if (profileError) {
-            console.error(
-              "PROFILE LOAD ERROR:",
-              profileError
-            );
-          }
-
-
-          /*
-            Insert request.
-          */
-
-          const {
-            error: insertError,
-          } =
-            await window.supabaseClient
-              .from(
-                "reservation_requests"
-              )
-              .insert({
-                user_id:
-                  user.id,
-
-                note:
-                  note || null,
-
-                status:
-                  "pending",
-              });
-
-
-          if (insertError) {
-            console.error(
-              "RESERVATION REQUEST INSERT ERROR:",
-              insertError
-            );
-
-
-            if (
-              insertError.code ===
-              "23505"
-            ) {
-              requestBtn.disabled =
-                true;
-
-              requestBtn.textContent =
-                "Request Pending";
-
-              requestMessage.textContent =
-                "You already have a pending reservation request.";
-            } else {
-              requestBtn.disabled =
-                false;
-
-              requestMessage.textContent =
-                `Could not send request: ${insertError.message}`;
-            }
-
-            return;
-          }
-
-
-          /*
-            Group notification.
-          */
-
-          const person =
-            profile?.display_name ||
-            profile?.email ||
-            user.email ||
-            "A member";
-
-
-          if (
-            typeof window.createNotification ===
-            "function"
-          ) {
-            try {
-              await window.createNotification({
-                type:
-                  "reservation_request",
-
-                title:
-                  "Reservation Info Requested",
-
-                message:
-                  `${person} requested the group reservation information.` +
-                  `${note ? ` Note: ${note}` : ""}`,
-              });
-
-            } catch (
-              notificationError
-            ) {
-              console.error(
-                "RESERVATION NOTIFICATION ERROR:",
-                notificationError
-              );
-            }
-          }
-
-
-          requestBtn.disabled =
-            true;
-
-          requestBtn.textContent =
-            "Request Pending";
-
-          requestMessage.textContent =
-            "Request sent! An admin can now review it.";
-
-        } catch (err) {
+        if (profileError) {
           console.error(
-            "RESERVATION REQUEST CRASH:",
-            err
+            "PROFILE LOAD ERROR:",
+            profileError
+          );
+        }
+
+        const { error: insertError } =
+          await window.supabaseClient
+            .from("reservation_requests")
+            .insert({
+              user_id: user.id,
+              note: note || null,
+              status: "pending",
+            });
+
+        if (insertError) {
+          console.error(
+            "RESERVATION REQUEST INSERT ERROR:",
+            insertError
           );
 
-          requestBtn.disabled =
-            false;
+          if (insertError.code === "23505") {
+            requestBtn.disabled = true;
+            requestBtn.textContent = "Request Pending";
 
-          requestMessage.textContent =
-            "Could not send the request.";
+            requestMessage.textContent =
+              "You already have a pending reservation request.";
+          } else {
+            requestBtn.disabled = false;
+
+            requestMessage.textContent =
+              `Could not send request: ${insertError.message}`;
+          }
+
+          return;
         }
-      }
-    );
-  }
 
+        const person =
+          profile?.display_name ||
+          profile?.email ||
+          user.email ||
+          "A member";
+
+        if (
+          typeof window.createNotification ===
+          "function"
+        ) {
+          try {
+            await window.createNotification({
+              type: "reservation_request",
+              title: "Reservation Info Requested",
+              message:
+                `${person} requested the group reservation information.` +
+                `${note ? ` Note: ${note}` : ""}`,
+            });
+          } catch (notificationError) {
+            console.error(
+              "RESERVATION NOTIFICATION ERROR:",
+              notificationError
+            );
+          }
+        }
+
+        requestBtn.disabled = true;
+        requestBtn.textContent = "Request Pending";
+
+        requestMessage.textContent =
+          "Request sent! An admin can now review it.";
+      } catch (err) {
+        console.error(
+          "RESERVATION REQUEST CRASH:",
+          err
+        );
+
+        requestBtn.disabled = false;
+
+        requestMessage.textContent =
+          "Could not send the request.";
+      }
+    });
+  }
 
   /*
     --------------------------------------------------
