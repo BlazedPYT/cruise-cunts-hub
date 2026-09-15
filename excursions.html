@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
+
 <body>
   <header class="topbar">
     <div class="container topbar-inner">
@@ -20,7 +21,12 @@
         <a href="dashboard.html" class="btn btn-secondary">Dashboard</a>
 
         <div class="notification-wrap">
-          <button id="notification-bell" class="notification-bell" type="button" aria-label="Notifications">
+          <button
+            id="notification-bell"
+            class="notification-bell"
+            type="button"
+            aria-label="Notifications"
+          >
             🔔
             <span id="notification-count" class="notification-count hidden">0</span>
           </button>
@@ -29,27 +35,49 @@
             <div class="notification-panel-header">
               <strong>Notifications</strong>
             </div>
+
             <div id="notification-list" class="notification-list">
               <p class="small-text">Loading notifications...</p>
             </div>
           </div>
         </div>
 
-        <button id="logout-btn" class="btn btn-primary">Log Out</button>
+        <button id="logout-btn" class="btn btn-primary">
+          Log Out
+        </button>
       </div>
     </div>
   </header>
 
   <main class="container page-space">
-    <section class="card" style="max-width: 920px; margin: 0 auto 1.25rem;">
+
+    <section
+      class="card"
+      style="max-width: 920px; margin: 0 auto 1.25rem;"
+    >
+      <span class="pill">🏝️ January 3–13, 2028</span>
+
       <h1>Excursions</h1>
+
       <p class="lead">
-        Browse excursions by port, mark what you booked, add your time, and see what the rest of the group is doing.
+        Norwegian Jewel • 10-Day Caribbean Round-Trip Miami
       </p>
+
+      <p>
+        Browse excursions by port, mark what you booked, add your time,
+        and see what the rest of the group is doing.
+      </p>
+
+      <p class="small-text">
+        Excursion prices and availability can change before sailing,
+        so always double-check the final listing before booking.
+      </p>
+
       <p id="excursions-message" class="small-text"></p>
     </section>
 
     <section id="excursions-wrap"></section>
+
   </main>
 
   <script src="js/supabase-client.js"></script>
