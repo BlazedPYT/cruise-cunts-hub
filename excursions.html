@@ -2,25 +2,63 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Excursions | Cruise Cunts Hub</title>
-  <link rel="stylesheet" href="style.css" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>
+    Excursions | Cruise Cunts Hub
+  </title>
+
+  <link
+    rel="stylesheet"
+    href="style.css"
+  />
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
+
 <body>
+
   <header class="topbar">
+
     <div class="container topbar-inner">
+
       <div>
-        <h2 class="site-title">Cruise Cunts Hub</h2>
-        <p class="small-text">Excursion planner</p>
+
+        <h2 class="site-title">
+          Cruise Cunts Hub
+        </h2>
+
+        <p class="small-text">
+          Excursion planner
+        </p>
+
       </div>
 
+
       <div class="button-row">
-        <a href="photos.html" class="btn btn-secondary">Photos</a>
-        <a href="dashboard.html" class="btn btn-secondary">Dashboard</a>
+
+        <a
+          href="photos.html"
+          class="btn btn-secondary"
+        >
+          Photos
+        </a>
+
+        <a
+          href="dashboard.html"
+          class="btn btn-secondary"
+        >
+          Dashboard
+        </a>
+
 
         <div class="notification-wrap">
+
           <button
             id="notification-bell"
             class="notification-bell"
@@ -28,61 +66,109 @@
             aria-label="Notifications"
           >
             🔔
-            <span id="notification-count" class="notification-count hidden">0</span>
+
+            <span
+              id="notification-count"
+              class="notification-count hidden"
+            >
+              0
+            </span>
+
           </button>
 
-          <div id="notification-panel" class="notification-panel hidden">
+
+          <div
+            id="notification-panel"
+            class="notification-panel hidden"
+          >
+
             <div class="notification-panel-header">
-              <strong>Notifications</strong>
+              <strong>
+                Notifications
+              </strong>
             </div>
 
-            <div id="notification-list" class="notification-list">
-              <p class="small-text">Loading notifications...</p>
+            <div
+              id="notification-list"
+              class="notification-list"
+            >
+
+              <p class="small-text">
+                Loading notifications...
+              </p>
+
             </div>
+
           </div>
+
         </div>
 
-        <button id="logout-btn" class="btn btn-primary">
+
+        <button
+          id="logout-btn"
+          class="btn btn-primary"
+        >
           Log Out
         </button>
+
       </div>
+
     </div>
+
   </header>
+
+
 
   <main class="container page-space">
 
     <section
       class="card"
-      style="max-width: 920px; margin: 0 auto 1.25rem;"
+      style="
+        max-width: 920px;
+        margin: 0 auto 1.25rem;
+      "
     >
-      <span class="pill">🏝️ January 3–13, 2028</span>
 
-      <h1>Excursions</h1>
+      <span class="pill">
+        🏝️ January 3–13, 2028
+      </span>
+
+      <h1>
+        Excursions
+      </h1>
 
       <p class="lead">
         Norwegian Jewel • 10-Day Caribbean Round-Trip Miami
       </p>
 
       <p>
-        Browse excursions by port, mark what you booked, add your time,
-        and see what the rest of the group is doing.
+        Browse excursions by port, mark what you booked,
+        add your time, and see what the rest of the group is doing.
       </p>
 
       <p class="small-text">
-        Excursion prices and availability can change before sailing,
-        so always double-check the final listing before booking.
+        Excursion prices and availability can change before sailing.
       </p>
 
-      <p id="excursions-message" class="small-text"></p>
+      <p
+        id="excursions-message"
+        class="small-text"
+      ></p>
+
     </section>
 
-    <section id="excursions-wrap"></section>
+
+    <section
+      id="excursions-wrap"
+    ></section>
 
   </main>
+
 
   <script src="js/supabase-client.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/notifications.js"></script>
   <script src="js/excursions.js"></script>
+
 </body>
 </html>
