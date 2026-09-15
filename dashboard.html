@@ -4,97 +4,324 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard | Cruise Cunts Hub</title>
+
   <link rel="stylesheet" href="style.css" />
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
+
 <body>
+
   <header class="topbar">
     <div class="container topbar-inner">
+
       <div>
         <h2 class="site-title">Cruise Cunts Hub</h2>
         <p class="small-text">Private group dashboard</p>
       </div>
+
       <div class="button-row">
-        <a href="photos.html" class="btn btn-secondary">Photos</a>
-        <a id="admin-link" href="admin.html" class="btn btn-secondary hidden">Admin</a>
+
+        <a href="photos.html" class="btn btn-secondary">
+          Photos
+        </a>
+
+        <a
+          id="admin-link"
+          href="admin.html"
+          class="btn btn-secondary hidden"
+        >
+          Admin
+        </a>
+
 
         <div class="notification-wrap">
-          <button id="notification-bell" class="notification-bell" type="button" aria-label="Notifications">
+
+          <button
+            id="notification-bell"
+            class="notification-bell"
+            type="button"
+            aria-label="Notifications"
+          >
             🔔
-            <span id="notification-count" class="notification-count hidden">0</span>
+
+            <span
+              id="notification-count"
+              class="notification-count hidden"
+            >
+              0
+            </span>
           </button>
 
-          <div id="notification-panel" class="notification-panel hidden">
+
+          <div
+            id="notification-panel"
+            class="notification-panel hidden"
+          >
+
             <div class="notification-panel-header">
               <strong>Notifications</strong>
             </div>
-            <div id="notification-list" class="notification-list">
-              <p class="small-text">Loading notifications...</p>
+
+            <div
+              id="notification-list"
+              class="notification-list"
+            >
+              <p class="small-text">
+                Loading notifications...
+              </p>
             </div>
+
           </div>
+
         </div>
 
-        <button id="logout-btn" class="btn btn-primary">Log Out</button>
+
+        <button
+          id="logout-btn"
+          class="btn btn-primary"
+        >
+          Log Out
+        </button>
+
       </div>
     </div>
   </header>
 
+
+
   <main class="container page-space">
+
     <section class="card">
-      <h1 id="welcome-title">Welcome</h1>
+
+      <h1 id="welcome-title">
+        Welcome
+      </h1>
+
       <p class="lead">
         Here’s the current booked cruise for the group.
       </p>
+
     </section>
+
+
 
     <section class="grid-two">
-      <article class="card cruise-card featured-booked" style="max-width: 820px; margin: 0 auto; text-align: center;">
-        <span class="pill">🔥 Current Booked</span>
-        <h2>Current Cruise</h2>
-        <p><strong>Line:</strong> Norwegian Cruise Line</p>
-        <p><strong>Ship:</strong> Norwegian Jewel</p>
-        <p><strong>Embarkation:</strong> Miami, Florida</p>
-        <p><strong>Room:</strong> Inside Stateroom</p>
-        <p><strong>Booked Total:</strong> $3,288.00 for 2</p>
-        <p><strong>Booked Already:</strong> <span id="booked-already">Loading...</span></p>
-        <p><strong>Notes:</strong> Confirmed sailing with itinerary details, ship info, restaurant guide, bars, official deck plans, and port links.</p>
 
-        <h3 style="margin-top: 1.5rem;">Itinerary</h3>
-        <ul class="itinerary" style="list-style: none; padding: 0; margin: 1rem 0 0; text-align: center;">
-          <li><strong>Tue:</strong> Miami</li>
-          <li><strong>Wed:</strong> Great Stirrup Cay</li>
-          <li><strong>Thu:</strong> At Sea</li>
-          <li><strong>Fri:</strong> Cabo Rojo</li>
-          <li><strong>Sat:</strong> Oranjestad, Aruba</li>
-          <li><strong>Sun:</strong> Willemstad, Curaçao</li>
-          <li><strong>Mon:</strong> At Sea</li>
-          <li><strong>Tue:</strong> Falmouth, Jamaica</li>
-          <li><strong>Wed:</strong> George Town, Grand Cayman</li>
-          <li><strong>Thu:</strong> At Sea</li>
-          <li><strong>Fri:</strong> Miami</li>
+      <article
+        class="card cruise-card featured-booked"
+        style="
+          max-width: 820px;
+          margin: 0 auto;
+          text-align: center;
+        "
+      >
+
+        <span class="pill">
+          🔥 Current Booked
+        </span>
+
+        <h2>
+          Norwegian Jewel
+        </h2>
+
+        <p>
+          <strong>Itinerary:</strong>
+          10-Day Caribbean Round-Trip Miami
+        </p>
+
+        <p>
+          <strong>Dates:</strong>
+          January 3–13, 2028
+        </p>
+
+        <p>
+          <strong>Embarkation:</strong>
+          Miami, Florida
+        </p>
+
+        <p>
+          <strong>Room Type:</strong>
+          Inside Stateroom
+        </p>
+
+        <p>
+          <strong>Current Booked Price:</strong>
+          $3,668.00 for 2
+        </p>
+
+        <p>
+          <strong>Approx. Per Person:</strong>
+          $1,834.00
+        </p>
+
+        <p class="small-text">
+          Pricing reflects the current group booking and may differ
+          depending on promotions, cabin selection, and booking date.
+        </p>
+
+
+        <p>
+          <strong>Booked Already:</strong>
+
+          <span id="booked-already">
+            Loading...
+          </span>
+        </p>
+
+
+        <h3 style="margin-top: 1.5rem;">
+          Itinerary
+        </h3>
+
+
+        <ul
+          class="itinerary"
+          style="
+            list-style: none;
+            padding: 0;
+            margin: 1rem 0 0;
+            text-align: center;
+          "
+        >
+
+          <li>
+            <strong>Mon, Jan 3:</strong>
+            Miami, Florida
+          </li>
+
+          <li>
+            <strong>Tue, Jan 4:</strong>
+            Great Stirrup Cay, Bahamas
+          </li>
+
+          <li>
+            <strong>Wed, Jan 5:</strong>
+            At Sea
+          </li>
+
+          <li>
+            <strong>Thu, Jan 6:</strong>
+            Cabo Rojo, Dominican Republic
+          </li>
+
+          <li>
+            <strong>Fri, Jan 7:</strong>
+            Oranjestad, Aruba
+          </li>
+
+          <li>
+            <strong>Sat, Jan 8:</strong>
+            Willemstad, Curaçao
+          </li>
+
+          <li>
+            <strong>Sun, Jan 9:</strong>
+            At Sea
+          </li>
+
+          <li>
+            <strong>Mon, Jan 10:</strong>
+            Falmouth, Jamaica
+          </li>
+
+          <li>
+            <strong>Tue, Jan 11:</strong>
+            George Town, Grand Cayman
+          </li>
+
+          <li>
+            <strong>Wed, Jan 12:</strong>
+            At Sea
+          </li>
+
+          <li>
+            <strong>Thu, Jan 13:</strong>
+            Miami, Florida
+          </li>
+
         </ul>
 
-        <div class="button-row" style="margin-top: 1.5rem; justify-content: center; flex-wrap: wrap;">
-          <a class="btn btn-secondary" href="excursions.html">Excursions</a>
-          <a class="btn btn-secondary" href="members.html">View Members</a>
-          <a class="btn btn-secondary" href="profile.html">Edit My Profile</a>
-          <a class="btn btn-primary" href="current-booked.html">Open Full Trip Page</a>
+
+        <div
+          class="button-row"
+          style="
+            margin-top: 1.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+          "
+        >
+
+          <a
+            class="btn btn-primary"
+            href="current-booked.html"
+          >
+            Open Full Trip Page
+          </a>
+
+          <a
+            class="btn btn-secondary"
+            href="excursions.html"
+          >
+            Excursions
+          </a>
+
+          <a
+            class="btn btn-secondary"
+            href="members.html"
+          >
+            Members
+          </a>
+
+          <a
+            class="btn btn-secondary"
+            href="profile.html"
+          >
+            My Profile
+          </a>
+
         </div>
+
       </article>
+
     </section>
 
-    <section class="card" style="max-width: 820px; margin: 1.5rem auto 0;">
-      <h2>Excursions Booked So Far</h2>
-      <p class="small-text">Quick glance at who has booked what.</p>
-      <div id="dashboard-excursions-list" class="dashboard-mini-list">
-        <p class="small-text">Loading excursions...</p>
+
+
+    <section
+      class="card"
+      style="
+        max-width: 820px;
+        margin: 1.5rem auto 0;
+      "
+    >
+
+      <h2>
+        Excursions Booked So Far
+      </h2>
+
+      <p class="small-text">
+        Quick glance at who has booked what.
+      </p>
+
+      <div
+        id="dashboard-excursions-list"
+        class="dashboard-mini-list"
+      >
+        <p class="small-text">
+          Loading excursions...
+        </p>
       </div>
+
     </section>
+
   </main>
+
 
   <script src="js/supabase-client.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/notifications.js"></script>
   <script src="js/dashboard.js"></script>
+
 </body>
 </html>
