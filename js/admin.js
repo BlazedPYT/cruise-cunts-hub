@@ -1,16 +1,15 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  /*
-    --------------------------------------------------
-    DOM
-    --------------------------------------------------
-  */
-
   const userList =
     document.getElementById("user-list");
 
-  const requestList =
+  const reservationRequestList =
     document.getElementById(
       "reservation-request-list"
+    );
+
+  const memberReservationList =
+    document.getElementById(
+      "member-reservation-list"
     );
 
   const adminMessage =
@@ -42,13 +41,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (!window.supabaseClient) {
     console.error(
-      "Supabase client is not available."
+      "Supabase client unavailable."
     );
-
-    if (adminMessage) {
-      adminMessage.textContent =
-        "Could not connect to the member system.";
-    }
 
     return;
   }
@@ -71,11 +65,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     sessionError ||
     !session?.user
   ) {
-    console.error(
-      "ADMIN SESSION ERROR:",
-      sessionError
-    );
-
     window.location.href =
       "login.html";
 
@@ -114,14 +103,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (
     adminProfileError ||
-    !adminProfile ||
-    adminProfile.role !== "admin"
+    adminProfile?.role !==
+      "admin"
   ) {
-    console.error(
-      "ADMIN PROFILE ERROR:",
-      adminProfileError
-    );
-
     window.location.href =
       "dashboard.html";
 
@@ -145,7 +129,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       );
     } catch (err) {
       console.error(
-        "ADMIN NOTIFICATION ERROR:",
+        "NOTIFICATION ERROR:",
         err
       );
     }
@@ -197,25 +181,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function callAdminMemberTools(
     payload
   ) {
+    const {
+      data: { session },
+    } =
+      await window.supabaseClient.auth.getSession();
+
+
+    if (!session?.access_token) {
+      return {
+        error:
+          "Admin session could not be verified.",
+      };
+    }
+
+
     try {
-      const {
-        data: { session },
-        error,
-      } =
-        await window.supabaseClient.auth.getSession();
-
-
-      if (
-        error ||
-        !session?.access_token
-      ) {
-        return {
-          error:
-            "Could not verify your admin login.",
-        };
-      }
-
-
       const response =
         await fetch(
           "https://vhpbmkdtlajdohhxawno.supabase.co/functions/v1/admin-member-tools",
@@ -245,7 +225,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           await response.json();
       } catch (err) {
         console.error(
-          "EDGE FUNCTION JSON ERROR:",
+          "EDGE JSON ERROR:",
           err
         );
       }
@@ -263,12 +243,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       return result;
 
     } catch (err) {
-      console.error(
-        "ADMIN EDGE FUNCTION ERROR:",
-        err
-      );
-
-
       return {
         error:
           err.message ||
@@ -280,21 +254,475 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   /*
     --------------------------------------------------
-    LOAD RESERVATION REQUESTS
+    MEMBER RESERVATIONS
     --------------------------------------------------
   */
 
-  async function loadReservationRequests() {
-    if (!requestList) {
+  async function loadMemberReservations() {
+    if (!memberReservationList) {
       return;
     }
 
 
-    requestList.innerHTML = `
+    memberReservationList.innerHTML = `
       <p class="small-text">
-        Loading reservation requests...
+        Loading member reservations...
       </p>
     `;
+
+
+    const {
+      data,
+      error,
+    } =
+      await window.supabaseClient
+        .from(
+          "member_reservations"
+        )
+        .select(`
+          id,
+          user_id,
+          reservation_number,
+          status,
+          created_at,
+          reviewed_at,
+          reviewed_by,
+          profiles!member_reservations_user_id_fkey (
+            display_name,
+            email
+          )
+        `)
+        .order(
+          "created_at",
+          {
+            ascending:
+              false,
+          }
+        );
+
+
+    if (error) {
+      console.error(
+        "LOAD MEMBER RESERVATIONS ERROR:",
+        error
+      );
+
+      memberReservationList.innerHTML = `
+        <p class="small-text">
+          Could not load member reservations.
+        </p>
+      `;
+
+      return;
+    }
+
+
+    if (
+      !data ||
+      data.length === 0
+    ) {
+      memberReservationList.innerHTML = `
+        <p class="small-text">
+          Nobody has submitted a cruise reservation yet.
+        </p>
+      `;
+
+      return;
+    }
+
+
+    memberReservationList.innerHTML =
+      data
+        .map((reservation) => {
+          const name =
+            reservation.profiles?.display_name ||
+            reservation.profiles?.email ||
+            "Member";
+
+
+          const email =
+            reservation.profiles?.email ||
+            "";
+
+
+          let statusText =
+            reservation.status;
+
+
+          if (
+            reservation.status ===
+            "pending"
+          ) {
+            statusText =
+              "⏳ Pending";
+          }
+
+
+          if (
+            reservation.status ===
+            "approved"
+          ) {
+            statusText =
+              "✅ Approved";
+          }
+
+
+          if (
+            reservation.status ===
+            "declined"
+          ) {
+            statusText =
+              "❌ Declined";
+          }
+
+
+          return `
+            <div class="user-item">
+
+              <h3>
+                ${escapeHtml(name)}
+              </h3>
+
+              <p class="user-meta">
+                <strong>
+                  Email:
+                </strong>
+                ${escapeHtml(email)}
+              </p>
+
+              <p class="user-meta">
+                <strong>
+                  Reservation Number:
+                </strong>
+                ${escapeHtml(reservation.reservation_number)}
+              </p>
+
+              <p class="user-meta">
+                <strong>
+                  Status:
+                </strong>
+                ${escapeHtml(statusText)}
+              </p>
+
+              <p class="user-meta">
+                <strong>
+                  Submitted:
+                </strong>
+                ${escapeHtml(
+                  new Date(
+                    reservation.created_at
+                  ).toLocaleString()
+                )}
+              </p>
+
+
+              <div class="user-actions">
+
+                ${
+                  reservation.status ===
+                  "pending"
+                    ? `
+                      <button
+                        class="btn btn-primary member-reservation-approve-btn"
+                        data-id="${reservation.id}"
+                        data-user-id="${reservation.user_id}"
+                        type="button"
+                      >
+                        Approve Booking
+                      </button>
+
+                      <button
+                        class="btn btn-danger member-reservation-decline-btn"
+                        data-id="${reservation.id}"
+                        data-user-id="${reservation.user_id}"
+                        type="button"
+                      >
+                        Decline
+                      </button>
+                    `
+                    : ""
+                }
+
+
+                ${
+                  reservation.status ===
+                    "approved" ||
+                  reservation.status ===
+                    "declined"
+                    ? `
+                      <button
+                        class="btn btn-danger member-reservation-delete-btn"
+                        data-id="${reservation.id}"
+                        type="button"
+                      >
+                        Remove Submission
+                      </button>
+                    `
+                    : ""
+                }
+
+              </div>
+
+            </div>
+          `;
+        })
+        .join("");
+
+
+    bindMemberReservationButtons();
+  }
+
+
+  /*
+    --------------------------------------------------
+    APPROVE MEMBER RESERVATION
+    --------------------------------------------------
+  */
+
+  async function approveMemberReservation(
+    reservationId,
+    userId
+  ) {
+    if (adminMessage) {
+      adminMessage.textContent =
+        "Approving reservation...";
+    }
+
+
+    const {
+      error: reservationError,
+    } =
+      await window.supabaseClient
+        .from(
+          "member_reservations"
+        )
+        .update({
+          status:
+            "approved",
+
+          reviewed_at:
+            new Date().toISOString(),
+
+          reviewed_by:
+            user.id,
+        })
+        .eq(
+          "id",
+          reservationId
+        );
+
+
+    if (reservationError) {
+      adminMessage.textContent =
+        reservationError.message;
+
+      return;
+    }
+
+
+    const {
+      error: profileError,
+    } =
+      await window.supabaseClient
+        .from("profiles")
+        .update({
+          cruise_status:
+            "booked",
+        })
+        .eq(
+          "id",
+          userId
+        );
+
+
+    if (profileError) {
+      console.error(
+        "UPDATE CRUISE STATUS ERROR:",
+        profileError
+      );
+
+      adminMessage.textContent =
+        "Reservation was approved, but cruise status could not be updated.";
+
+      return;
+    }
+
+
+    adminMessage.textContent =
+      "Reservation approved. Member is now marked as booked.";
+
+
+    await loadMemberReservations();
+
+    await loadUsers();
+  }
+
+
+  /*
+    --------------------------------------------------
+    DECLINE MEMBER RESERVATION
+    --------------------------------------------------
+  */
+
+  async function declineMemberReservation(
+    reservationId
+  ) {
+    const {
+      error,
+    } =
+      await window.supabaseClient
+        .from(
+          "member_reservations"
+        )
+        .update({
+          status:
+            "declined",
+
+          reviewed_at:
+            new Date().toISOString(),
+
+          reviewed_by:
+            user.id,
+        })
+        .eq(
+          "id",
+          reservationId
+        );
+
+
+    if (error) {
+      adminMessage.textContent =
+        error.message;
+
+      return;
+    }
+
+
+    adminMessage.textContent =
+      "Reservation submission declined.";
+
+
+    await loadMemberReservations();
+  }
+
+
+  /*
+    --------------------------------------------------
+    DELETE MEMBER RESERVATION
+    --------------------------------------------------
+  */
+
+  async function deleteMemberReservation(
+    reservationId
+  ) {
+    const confirmed =
+      confirm(
+        "Remove this reservation submission?"
+      );
+
+
+    if (!confirmed) {
+      return;
+    }
+
+
+    const {
+      error,
+    } =
+      await window.supabaseClient
+        .from(
+          "member_reservations"
+        )
+        .delete()
+        .eq(
+          "id",
+          reservationId
+        );
+
+
+    if (error) {
+      adminMessage.textContent =
+        error.message;
+
+      return;
+    }
+
+
+    adminMessage.textContent =
+      "Reservation submission removed.";
+
+
+    await loadMemberReservations();
+  }
+
+
+  function bindMemberReservationButtons() {
+    document
+      .querySelectorAll(
+        ".member-reservation-approve-btn"
+      )
+      .forEach((button) => {
+
+        button.addEventListener(
+          "click",
+          async () => {
+
+            await approveMemberReservation(
+              button.dataset.id,
+              button.dataset.userId
+            );
+          }
+        );
+      });
+
+
+    document
+      .querySelectorAll(
+        ".member-reservation-decline-btn"
+      )
+      .forEach((button) => {
+
+        button.addEventListener(
+          "click",
+          async () => {
+
+            await declineMemberReservation(
+              button.dataset.id
+            );
+          }
+        );
+      });
+
+
+    document
+      .querySelectorAll(
+        ".member-reservation-delete-btn"
+      )
+      .forEach((button) => {
+
+        button.addEventListener(
+          "click",
+          async () => {
+
+            await deleteMemberReservation(
+              button.dataset.id
+            );
+          }
+        );
+      });
+  }
+
+
+  /*
+    --------------------------------------------------
+    GROUP CABIN REQUESTS
+    --------------------------------------------------
+  */
+
+  async function loadReservationRequests() {
+    if (!reservationRequestList) {
+      return;
+    }
 
 
     const {
@@ -311,8 +739,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           note,
           status,
           created_at,
-          handled_at,
-          handled_by,
           profiles!reservation_requests_user_id_fkey (
             display_name,
             email
@@ -329,14 +755,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (error) {
       console.error(
-        "LOAD RESERVATION REQUESTS ERROR:",
+        "LOAD CABIN REQUESTS ERROR:",
         error
       );
 
-
-      requestList.innerHTML = `
+      reservationRequestList.innerHTML = `
         <p class="small-text">
-          Could not load reservation requests.
+          Could not load requests.
         </p>
       `;
 
@@ -348,9 +773,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       !data ||
       data.length === 0
     ) {
-      requestList.innerHTML = `
+      reservationRequestList.innerHTML = `
         <p class="small-text">
-          Nobody has requested the group reservation information yet.
+          No group cabin information requests yet.
         </p>
       `;
 
@@ -358,129 +783,31 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
-    requestList.innerHTML =
+    reservationRequestList.innerHTML =
       data
         .map((request) => {
-          const person =
+          const name =
             request.profiles?.display_name ||
             request.profiles?.email ||
             "Member";
-
-
-          const email =
-            request.profiles?.email ||
-            "No email available";
-
-
-          const note =
-            request.note ||
-            "No note provided.";
-
-
-          const requestDate =
-            new Date(
-              request.created_at
-            ).toLocaleString();
-
-
-          let statusLabel =
-            request.status;
-
-
-          if (
-            request.status ===
-            "pending"
-          ) {
-            statusLabel =
-              "⏳ Pending";
-          }
-
-
-          if (
-            request.status ===
-            "approved"
-          ) {
-            statusLabel =
-              "✅ Approved — Reservation Number Unlocked";
-          }
-
-
-          if (
-            request.status ===
-            "completed"
-          ) {
-            statusLabel =
-              "✔ Completed — Reservation Number Unlocked";
-          }
-
-
-          if (
-            request.status ===
-            "declined"
-          ) {
-            statusLabel =
-              "❌ Declined";
-          }
 
 
           return `
             <div class="user-item">
 
               <h3>
-                ${escapeHtml(person)}
+                ${escapeHtml(name)}
               </h3>
 
               <p class="user-meta">
-                <strong>
-                  Email:
-                </strong>
-
-                ${escapeHtml(email)}
+                <strong>Status:</strong>
+                ${escapeHtml(request.status)}
               </p>
 
               <p class="user-meta">
-                <strong>
-                  Status:
-                </strong>
-
-                ${escapeHtml(statusLabel)}
+                <strong>Who they want to be near:</strong>
+                ${escapeHtml(request.note || "No note")}
               </p>
-
-              <p class="user-meta">
-                <strong>
-                  Requested:
-                </strong>
-
-                ${escapeHtml(requestDate)}
-              </p>
-
-              <p class="user-meta">
-                <strong>
-                  Who they want to be near / Notes:
-                </strong>
-
-                ${escapeHtml(note)}
-              </p>
-
-
-              ${
-                request.status ===
-                "approved"
-                  ? `
-                    <div class="notice-box">
-                      <strong>
-                        Reservation info unlocked.
-                      </strong>
-
-                      <p class="small-text">
-                        This member can now see the group
-                        reservation number on the Current
-                        Cruise page.
-                      </p>
-                    </div>
-                  `
-                  : ""
-              }
 
 
               <div class="user-actions">
@@ -490,54 +817,19 @@ document.addEventListener("DOMContentLoaded", async () => {
                   "pending"
                     ? `
                       <button
-                        class="btn btn-primary reservation-approve-btn"
-                        data-request-id="${request.id}"
+                        class="btn btn-primary cabin-approve-btn"
+                        data-id="${request.id}"
                         type="button"
                       >
                         Approve &amp; Unlock
                       </button>
 
-
                       <button
-                        class="btn btn-danger reservation-decline-btn"
-                        data-request-id="${request.id}"
+                        class="btn btn-danger cabin-decline-btn"
+                        data-id="${request.id}"
                         type="button"
                       >
                         Decline
-                      </button>
-                    `
-                    : ""
-                }
-
-
-                ${
-                  request.status ===
-                  "approved"
-                    ? `
-                      <button
-                        class="btn btn-secondary reservation-complete-btn"
-                        data-request-id="${request.id}"
-                        type="button"
-                      >
-                        Mark Completed
-                      </button>
-                    `
-                    : ""
-                }
-
-
-                ${
-                  request.status ===
-                    "declined" ||
-                  request.status ===
-                    "completed"
-                    ? `
-                      <button
-                        class="btn btn-danger reservation-delete-btn"
-                        data-request-id="${request.id}"
-                        type="button"
-                      >
-                        Remove Request
                       </button>
                     `
                     : ""
@@ -551,26 +843,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         .join("");
 
 
-    bindReservationRequestButtons();
+    bindCabinButtons();
   }
 
 
-  /*
-    --------------------------------------------------
-    UPDATE RESERVATION REQUEST
-    --------------------------------------------------
-  */
-
-  async function updateReservationRequest(
+  async function updateCabinRequest(
     requestId,
-    newStatus
+    status
   ) {
-    if (adminMessage) {
-      adminMessage.textContent =
-        "Updating reservation request...";
-    }
-
-
     const {
       error,
     } =
@@ -579,8 +859,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           "reservation_requests"
         )
         .update({
-          status:
-            newStatus,
+          status,
 
           handled_at:
             new Date().toISOString(),
@@ -595,122 +874,27 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     if (error) {
-      console.error(
-        "UPDATE RESERVATION REQUEST ERROR:",
-        error
-      );
-
-
-      if (adminMessage) {
-        adminMessage.textContent =
-          error.message;
-      }
-
-      return;
-    }
-
-
-    if (adminMessage) {
-      if (
-        newStatus ===
-        "approved"
-      ) {
-        adminMessage.textContent =
-          "Request approved. The member can now securely view the reservation number.";
-      }
-
-      else if (
-        newStatus ===
-        "completed"
-      ) {
-        adminMessage.textContent =
-          "Reservation request marked completed.";
-      }
-
-      else if (
-        newStatus ===
-        "declined"
-      ) {
-        adminMessage.textContent =
-          "Reservation request declined.";
-      }
-    }
-
-
-    await loadReservationRequests();
-  }
-
-
-  /*
-    --------------------------------------------------
-    DELETE REQUEST
-    --------------------------------------------------
-  */
-
-  async function deleteReservationRequest(
-    requestId
-  ) {
-    const confirmed =
-      confirm(
-        "Remove this reservation request?"
-      );
-
-
-    if (!confirmed) {
-      return;
-    }
-
-
-    const {
-      error,
-    } =
-      await window.supabaseClient
-        .from(
-          "reservation_requests"
-        )
-        .delete()
-        .eq(
-          "id",
-          requestId
-        );
-
-
-    if (error) {
-      console.error(
-        "DELETE REQUEST ERROR:",
-        error
-      );
-
-
-      if (adminMessage) {
-        adminMessage.textContent =
-          error.message;
-      }
-
-      return;
-    }
-
-
-    if (adminMessage) {
       adminMessage.textContent =
-        "Reservation request removed.";
+        error.message;
+
+      return;
     }
+
+
+    adminMessage.textContent =
+      status === "approved"
+        ? "Group cabin info unlocked for member."
+        : "Request declined.";
 
 
     await loadReservationRequests();
   }
 
 
-  /*
-    --------------------------------------------------
-    REQUEST BUTTONS
-    --------------------------------------------------
-  */
-
-  function bindReservationRequestButtons() {
+  function bindCabinButtons() {
     document
       .querySelectorAll(
-        ".reservation-approve-btn"
+        ".cabin-approve-btn"
       )
       .forEach((button) => {
 
@@ -718,8 +902,8 @@ document.addEventListener("DOMContentLoaded", async () => {
           "click",
           async () => {
 
-            await updateReservationRequest(
-              button.dataset.requestId,
+            await updateCabinRequest(
+              button.dataset.id,
               "approved"
             );
           }
@@ -729,7 +913,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     document
       .querySelectorAll(
-        ".reservation-complete-btn"
+        ".cabin-decline-btn"
       )
       .forEach((button) => {
 
@@ -737,46 +921,9 @@ document.addEventListener("DOMContentLoaded", async () => {
           "click",
           async () => {
 
-            await updateReservationRequest(
-              button.dataset.requestId,
-              "completed"
-            );
-          }
-        );
-      });
-
-
-    document
-      .querySelectorAll(
-        ".reservation-decline-btn"
-      )
-      .forEach((button) => {
-
-        button.addEventListener(
-          "click",
-          async () => {
-
-            await updateReservationRequest(
-              button.dataset.requestId,
+            await updateCabinRequest(
+              button.dataset.id,
               "declined"
-            );
-          }
-        );
-      });
-
-
-    document
-      .querySelectorAll(
-        ".reservation-delete-btn"
-      )
-      .forEach((button) => {
-
-        button.addEventListener(
-          "click",
-          async () => {
-
-            await deleteReservationRequest(
-              button.dataset.requestId
             );
           }
         );
@@ -786,7 +933,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   /*
     --------------------------------------------------
-    LOAD MEMBERS
+    LOAD USERS
     --------------------------------------------------
   */
 
@@ -794,13 +941,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!userList) {
       return;
     }
-
-
-    userList.innerHTML = `
-      <p class="small-text">
-        Loading members...
-      </p>
-    `;
 
 
     const {
@@ -815,6 +955,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           display_name,
           approved,
           role,
+          cruise_status,
           created_at
         `)
         .order(
@@ -827,29 +968,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     if (error) {
-      console.error(
-        "LOAD USERS ERROR:",
-        error
-      );
-
-
       userList.innerHTML = `
         <p class="small-text">
           Failed to load members.
-        </p>
-      `;
-
-      return;
-    }
-
-
-    if (
-      !data ||
-      data.length === 0
-    ) {
-      userList.innerHTML = `
-        <p class="small-text">
-          No members found.
         </p>
       `;
 
@@ -865,16 +986,14 @@ document.addEventListener("DOMContentLoaded", async () => {
             user.id;
 
 
-          const name =
-            member.display_name ||
-            "No display name";
-
-
           return `
             <div class="user-item">
 
               <h3>
-                ${escapeHtml(name)}
+                ${escapeHtml(
+                  member.display_name ||
+                  "No display name"
+                )}
               </h3>
 
               <p class="user-meta">
@@ -890,6 +1009,11 @@ document.addEventListener("DOMContentLoaded", async () => {
               <p class="user-meta">
                 <strong>Role:</strong>
                 ${escapeHtml(member.role || "member")}
+              </p>
+
+              <p class="user-meta">
+                <strong>Cruise Status:</strong>
+                ${escapeHtml(member.cruise_status || "interested")}
               </p>
 
 
@@ -971,9 +1095,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           "click",
           async () => {
 
-            const userId =
-              button.dataset.userId;
-
             const currentlyApproved =
               button.dataset.approved ===
               "true";
@@ -990,23 +1111,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                 })
                 .eq(
                   "id",
-                  userId
+                  button.dataset.userId
                 );
 
 
             if (error) {
-              if (adminMessage) {
-                adminMessage.textContent =
-                  error.message;
-              }
+              adminMessage.textContent =
+                error.message;
 
               return;
-            }
-
-
-            if (adminMessage) {
-              adminMessage.textContent =
-                "Member approval updated.";
             }
 
 
@@ -1026,15 +1139,8 @@ document.addEventListener("DOMContentLoaded", async () => {
           "click",
           async () => {
 
-            const userId =
-              button.dataset.userId;
-
-            const currentRole =
-              button.dataset.role;
-
-
             const newRole =
-              currentRole ===
+              button.dataset.role ===
               "admin"
                 ? "member"
                 : "admin";
@@ -1051,23 +1157,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                 })
                 .eq(
                   "id",
-                  userId
+                  button.dataset.userId
                 );
 
 
             if (error) {
-              if (adminMessage) {
-                adminMessage.textContent =
-                  error.message;
-              }
+              adminMessage.textContent =
+                error.message;
 
               return;
-            }
-
-
-            if (adminMessage) {
-              adminMessage.textContent =
-                "Member role updated.";
             }
 
 
@@ -1087,10 +1185,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           "click",
           async () => {
 
-            const userId =
-              button.dataset.userId;
-
-
             const password =
               prompt(
                 "Enter the member's new temporary password:"
@@ -1102,51 +1196,22 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
 
-            if (
-              password.length < 6
-            ) {
-              if (adminMessage) {
-                adminMessage.textContent =
-                  "Password must be at least 6 characters.";
-              }
-
-              return;
-            }
-
-
-            if (adminMessage) {
-              adminMessage.textContent =
-                "Resetting password...";
-            }
-
-
             const result =
               await callAdminMemberTools({
                 action:
                   "reset_password",
 
                 user_id:
-                  userId,
+                  button.dataset.userId,
 
                 new_password:
                   password,
               });
 
 
-            if (result.error) {
-              if (adminMessage) {
-                adminMessage.textContent =
-                  result.error;
-              }
-
-              return;
-            }
-
-
-            if (adminMessage) {
-              adminMessage.textContent =
-                "Password reset successfully.";
-            }
+            adminMessage.textContent =
+              result.error ||
+              "Password reset successfully.";
           }
         );
       });
@@ -1162,24 +1227,12 @@ document.addEventListener("DOMContentLoaded", async () => {
           "click",
           async () => {
 
-            const userId =
-              button.dataset.userId;
-
-
-            const confirmed =
-              confirm(
-                "Permanently delete this user? This cannot be undone."
-              );
-
-
-            if (!confirmed) {
+            if (
+              !confirm(
+                "Permanently delete this user?"
+              )
+            ) {
               return;
-            }
-
-
-            if (adminMessage) {
-              adminMessage.textContent =
-                "Deleting user...";
             }
 
 
@@ -1189,27 +1242,25 @@ document.addEventListener("DOMContentLoaded", async () => {
                   "delete_user",
 
                 user_id:
-                  userId,
+                  button.dataset.userId,
               });
 
 
             if (result.error) {
-              if (adminMessage) {
-                adminMessage.textContent =
-                  result.error;
-              }
+              adminMessage.textContent =
+                result.error;
 
               return;
             }
 
 
-            if (adminMessage) {
-              adminMessage.textContent =
-                "User deleted successfully.";
-            }
+            adminMessage.textContent =
+              "User deleted.";
 
 
             await loadUsers();
+
+            await loadMemberReservations();
 
             await loadReservationRequests();
           }
@@ -1259,118 +1310,64 @@ document.addEventListener("DOMContentLoaded", async () => {
           "";
 
 
-        if (
-          !email ||
-          !password
-        ) {
+        createMemberMessage.textContent =
+          "Creating member...";
+
+
+        const {
+          data: { session },
+        } =
+          await window.supabaseClient.auth.getSession();
+
+
+        const response =
+          await fetch(
+            "https://vhpbmkdtlajdohhxawno.supabase.co/functions/v1/swift-endpoint",
+            {
+              method:
+                "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+
+                Authorization:
+                  `Bearer ${session.access_token}`,
+              },
+
+              body:
+                JSON.stringify({
+                  display_name:
+                    displayName,
+
+                  email,
+
+                  password,
+                }),
+            }
+          );
+
+
+        const result =
+          await response.json();
+
+
+        if (!response.ok) {
           createMemberMessage.textContent =
-            "Email and password are required.";
-
-          return;
-        }
-
-
-        if (
-          password.length < 6
-        ) {
-          createMemberMessage.textContent =
-            "Temporary password must be at least 6 characters.";
+            result?.error ||
+            "Could not create member.";
 
           return;
         }
 
 
         createMemberMessage.textContent =
-          "Creating member...";
+          `Account created for ${email}.`;
 
 
-        try {
-          const {
-            data: { session },
-          } =
-            await window.supabaseClient.auth.getSession();
+        createMemberForm.reset();
 
-
-          if (
-            !session?.access_token
-          ) {
-            createMemberMessage.textContent =
-              "Admin session could not be verified.";
-
-            return;
-          }
-
-
-          const response =
-            await fetch(
-              "https://vhpbmkdtlajdohhxawno.supabase.co/functions/v1/swift-endpoint",
-              {
-                method:
-                  "POST",
-
-                headers: {
-                  "Content-Type":
-                    "application/json",
-
-                  Authorization:
-                    `Bearer ${session.access_token}`,
-                },
-
-                body:
-                  JSON.stringify({
-                    display_name:
-                      displayName,
-
-                    email,
-
-                    password,
-                  }),
-              }
-            );
-
-
-          let result = {};
-
-
-          try {
-            result =
-              await response.json();
-          } catch (err) {
-            console.error(
-              "CREATE MEMBER JSON ERROR:",
-              err
-            );
-          }
-
-
-          if (!response.ok) {
-            createMemberMessage.textContent =
-              result?.error ||
-              `Could not create member. Status ${response.status}`;
-
-            return;
-          }
-
-
-          createMemberMessage.textContent =
-            `Account created for ${email}.`;
-
-
-          createMemberForm.reset();
-
-
-          await loadUsers();
-
-        } catch (err) {
-          console.error(
-            "CREATE MEMBER ERROR:",
-            err
-          );
-
-
-          createMemberMessage.textContent =
-            "Could not create the account.";
-        }
+        await loadUsers();
       }
     );
   }
@@ -1381,6 +1378,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     INITIAL LOAD
     --------------------------------------------------
   */
+
+  await loadMemberReservations();
 
   await loadReservationRequests();
 
