@@ -3,8 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>Current Booked | Cruise Cunts Hub</title>
+
   <link rel="stylesheet" href="style.css" />
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
@@ -14,19 +17,32 @@
     <div class="container topbar-inner">
 
       <div>
-        <h2 class="site-title">Cruise Cunts Hub</h2>
-        <p class="small-text">Private group cruise details</p>
+        <h2 class="site-title">
+          Cruise Cunts Hub
+        </h2>
+
+        <p class="small-text">
+          Private group cruise details
+        </p>
       </div>
+
 
       <div class="button-row">
 
-        <a href="photos.html" class="btn btn-secondary">
+        <a
+          href="photos.html"
+          class="btn btn-secondary"
+        >
           Photos
         </a>
 
-        <a class="btn btn-secondary" href="dashboard.html">
+        <a
+          class="btn btn-secondary"
+          href="dashboard.html"
+        >
           Back to Dashboard
         </a>
+
 
         <div class="notification-wrap">
 
@@ -37,13 +53,16 @@
             aria-label="Notifications"
           >
             🔔
+
             <span
               id="notification-count"
               class="notification-count hidden"
             >
               0
             </span>
+
           </button>
+
 
           <div
             id="notification-panel"
@@ -64,7 +83,9 @@
             </div>
 
           </div>
+
         </div>
+
 
         <button
           id="logout-btn"
@@ -81,7 +102,6 @@
 
   <main class="container page-space">
 
-    <!-- HERO -->
 
     <section class="card hero-card">
 
@@ -95,12 +115,6 @@
 
       <p class="lead">
         January 3–13, 2028 • Round-trip Miami
-      </p>
-
-      <p>
-        This is the current group cruise. Use this page to check out
-        the ship, itinerary, food, nightlife, included perks, and
-        everything else before deciding whether you're joining the mess.
       </p>
 
 
@@ -117,26 +131,32 @@
         </div>
 
         <div class="mini-card">
-          <h3>Embark</h3>
-          <p>Miami, Florida</p>
-        </div>
-
-        <div class="mini-card">
           <h3>Length</h3>
           <p>10 Nights</p>
         </div>
 
         <div class="mini-card">
-          <h3>Room Type</h3>
-          <p>Inside Stateroom</p>
+          <h3>Embark</h3>
+          <p>Miami, Florida</p>
         </div>
 
         <div class="mini-card">
-          <h3>Status</h3>
-          <p>Group Cruise Booked</p>
+          <h3>Current Price</h3>
+          <p>$3,668 for 2</p>
+        </div>
+
+        <div class="mini-card">
+          <h3>Per Person</h3>
+          <p>$1,834</p>
         </div>
 
       </div>
+
+
+      <p class="small-text">
+        Current group booking price. New bookings may price differently
+        depending on promotions and cabin availability.
+      </p>
 
 
       <div
@@ -170,7 +190,69 @@
 
 
 
-    <!-- MAIN TABS -->
+    <section
+      class="card"
+      style="
+        max-width: 820px;
+        margin: 1.5rem auto;
+      "
+    >
+
+      <span class="pill">
+        🛏️ Traveling Together
+      </span>
+
+      <h2>
+        Want Your Cabin Near the Group?
+      </h2>
+
+      <p>
+        Already booked this cruise? You can request the group's
+        reservation information so you can contact Norwegian Cruise
+        Line and tell them you're traveling with the group.
+      </p>
+
+      <p class="small-text">
+        This does not guarantee nearby staterooms. NCL controls cabin
+        assignments and availability.
+      </p>
+
+
+      <label for="reservation-request-note">
+        Who are you hoping to be near?
+      </label>
+
+      <textarea
+        id="reservation-request-note"
+        rows="3"
+        placeholder="Example: We'd like our room near Daniel and Jonathan if possible."
+      ></textarea>
+
+
+      <div
+        class="button-row"
+        style="margin-top: 1rem;"
+      >
+
+        <button
+          id="reservation-request-btn"
+          class="btn btn-primary"
+          type="button"
+        >
+          Request Group Reservation Info
+        </button>
+
+      </div>
+
+
+      <p
+        id="reservation-request-message"
+        class="message"
+      ></p>
+
+    </section>
+
+
 
     <section class="card">
 
@@ -215,8 +297,6 @@
 
 
 
-      <!-- OVERVIEW -->
-
       <div
         id="tab-overview"
         class="tab-panel active"
@@ -228,89 +308,59 @@
 
         <p>
           Norwegian Jewel is one of Norwegian Cruise Line's
-          Jewel-class ships, giving the group a smaller and more
-          traditional cruise-ship experience than NCL's newest
-          mega-ships.
+          Jewel-class ships.
         </p>
 
         <p>
-          This itinerary has a nice balance of island stops and sea
-          days, with ports in the Bahamas, Dominican Republic, Aruba,
-          Curaçao, Jamaica, and Grand Cayman.
+          The itinerary includes stops in the Bahamas, Dominican
+          Republic, Aruba, Curaçao, Jamaica, and Grand Cayman,
+          along with three sea days.
         </p>
-
-        <p>
-          There are three sea days built into the sailing, which gives
-          everybody plenty of time to actually enjoy the ship instead
-          of waking up for a port every single morning.
-        </p>
-
-
-        <div class="info-grid">
-
-          <div class="mini-card">
-            <h3>Class</h3>
-            <p>Jewel Class</p>
-          </div>
-
-          <div class="mini-card">
-            <h3>Guests</h3>
-            <p>2,368</p>
-          </div>
-
-          <div class="mini-card">
-            <h3>Crew</h3>
-            <p>1,069</p>
-          </div>
-
-          <div class="mini-card">
-            <h3>Route</h3>
-            <p>Southern &amp; Western Caribbean</p>
-          </div>
-
-        </div>
-
 
 
         <h3 class="section-heading">
-          Included with the current booking
+          Included With The Current Booking
         </h3>
+
 
         <div class="info-grid">
 
           <div class="mini-card">
             <h3>🍹 Unlimited Open Bar</h3>
             <p>
-              Spirits, cocktails, wine, beer, juice, and soda
-              included through the Free at Sea package.
+              Unlimited Open Bar package included for both guests.
             </p>
           </div>
 
           <div class="mini-card">
             <h3>🍽️ Specialty Dining</h3>
             <p>
-              4 specialty dining meals included per guest on the
-              current reservation.
+              4 specialty dining meals per guest.
             </p>
           </div>
 
           <div class="mini-card">
             <h3>📶 Wi-Fi</h3>
             <p>
-              150 minutes of internet access included per person.
+              150 Wi-Fi minutes per guest.
             </p>
           </div>
 
           <div class="mini-card">
-            <h3>🏝️ Shore Excursion Credit</h3>
+            <h3>🏝️ Excursion Credit</h3>
             <p>
-              $50 shore excursion credit toward eligible tours for
-              the first guest on the reservation.
+              Shore excursion promotional credit included.
+            </p>
+          </div>
+
+          <div class="mini-card">
+            <h3>💵 Service Charges</h3>
+            <p>
+              Prepaid service charges included in the current booking.
             </p>
           </div>
 
         </div>
-
 
 
         <div class="ship-image-grid">
@@ -333,8 +383,6 @@
 
 
 
-      <!-- ITINERARY -->
-
       <div
         id="tab-itinerary"
         class="tab-panel"
@@ -344,19 +392,18 @@
           January 3–13, 2028 Itinerary
         </h2>
 
+
         <div class="table-wrap">
 
           <table class="pretty-table">
 
             <thead>
-
               <tr>
                 <th>Date</th>
                 <th>Port</th>
                 <th>Arrive</th>
                 <th>Depart</th>
               </tr>
-
             </thead>
 
 
@@ -459,70 +506,62 @@
 
 
 
-      <!-- FOOD -->
-
       <div
         id="tab-food"
         class="tab-panel"
       >
 
         <h2>
-          Restaurants worth getting excited about
+          Restaurants
         </h2>
-
-        <p class="lead">
-          Ten nights means we're absolutely going to have opinions
-          about the food by day four.
-        </p>
-
 
 
         <h3 class="section-heading">
           Complimentary Dining
         </h3>
 
+
         <div class="info-grid">
 
           <div class="mini-card">
             <h3>O'Sheehan's</h3>
             <p>
-              Deck 8 • Complimentary • pub-style comfort food
+              Pub-style comfort food.
             </p>
           </div>
 
           <div class="mini-card">
             <h3>Garden Café</h3>
             <p>
-              Deck 12 • Complimentary buffet • breakfast, lunch,
-              and dinner
+              Buffet for breakfast, lunch, and dinner.
             </p>
           </div>
 
           <div class="mini-card">
             <h3>Azura</h3>
             <p>
-              Deck 6 • Complimentary main dining
+              Complimentary main dining.
             </p>
           </div>
 
           <div class="mini-card">
             <h3>Tsar's Palace</h3>
             <p>
-              Deck 6 • Complimentary main dining
+              Complimentary main dining.
             </p>
           </div>
 
           <div class="mini-card">
             <h3>The Great Outdoors</h3>
             <p>
-              Deck 12 • Outdoor buffet and grill
+              Outdoor buffet and grill.
             </p>
           </div>
 
           <div class="mini-card">
             <h3>Topsiders Bar &amp; Grill</h3>
             <p>
-              Deck 12 • Poolside food and drinks
+              Poolside dining.
             </p>
           </div>
 
@@ -534,66 +573,42 @@
           Specialty Dining
         </h3>
 
-        <p>
-          The current reservation includes
-          <strong>4 specialty dining meals per guest</strong>,
-          so we're going to have plenty of opportunities for
-          group dinners.
-        </p>
-
 
         <div class="info-grid">
 
           <div class="mini-card">
             <h3>Cagney's Steakhouse</h3>
-            <p>
-              Premium steakhouse • steaks, seafood, and date-night
-              energy
-            </p>
+            <p>Premium steakhouse.</p>
           </div>
 
           <div class="mini-card">
             <h3>Teppanyaki</h3>
-            <p>
-              Shared-table hibachi-style dining and probably one
-              of the best options for a group dinner
-            </p>
+            <p>Hibachi-style shared-table dining.</p>
           </div>
 
           <div class="mini-card">
             <h3>La Cucina</h3>
-            <p>
-              Italian • pasta, classic dishes, and comfort-food mood
-            </p>
+            <p>Italian dining.</p>
           </div>
 
           <div class="mini-card">
             <h3>Le Bistro</h3>
-            <p>
-              French dining • fancy without requiring us to actually
-              become classy
-            </p>
+            <p>French dining.</p>
           </div>
 
           <div class="mini-card">
             <h3>Chin Chin</h3>
-            <p>
-              Asian-inspired dishes, noodles, soups, and wok favorites
-            </p>
+            <p>Asian-inspired dining.</p>
           </div>
 
           <div class="mini-card">
             <h3>Moderno Churrascaria</h3>
-            <p>
-              Brazilian steakhouse • meats carved tableside
-            </p>
+            <p>Brazilian steakhouse.</p>
           </div>
 
           <div class="mini-card">
             <h3>Sushi</h3>
-            <p>
-              Sushi and Japanese-inspired dishes
-            </p>
+            <p>Japanese-inspired sushi.</p>
           </div>
 
         </div>
@@ -601,8 +616,6 @@
       </div>
 
 
-
-      <!-- BARS -->
 
       <div
         id="tab-bars"
@@ -610,13 +623,8 @@
       >
 
         <h2>
-          Bars, drinks, and late-night behavior
+          Bars &amp; Nightlife
         </h2>
-
-        <p>
-          The current booking includes the Unlimited Open Bar package,
-          which makes this tab slightly more dangerous.
-        </p>
 
 
         <div class="info-grid">
@@ -624,38 +632,35 @@
           <div class="mini-card">
             <h3>Bliss Ultra Lounge</h3>
             <p>
-              Late-night energy, music, dancing, and group-night-out
-              potential.
+              Music, dancing, and late-night hangouts.
             </p>
           </div>
 
           <div class="mini-card">
             <h3>Magnum's Champagne &amp; Wine Bar</h3>
             <p>
-              Wine and champagne when somebody decides we're suddenly
-              sophisticated.
+              Wine and champagne.
             </p>
           </div>
 
           <div class="mini-card">
             <h3>Maltings Beer &amp; Whiskey Bar</h3>
             <p>
-              Whiskey-forward bar with a more relaxed hangout vibe.
+              Beer and whiskey lounge.
             </p>
           </div>
 
           <div class="mini-card">
             <h3>Pool Bars</h3>
             <p>
-              Tropical drinks, sunshine, sea days, and choices we'll
-              discuss later.
+              Drinks during pool and sea days.
             </p>
           </div>
 
           <div class="mini-card">
             <h3>Spinnaker Lounge</h3>
             <p>
-              Big ocean views and a classic meetup spot for the group.
+              Ocean views and group hangout space.
             </p>
           </div>
 
@@ -664,8 +669,6 @@
       </div>
 
 
-
-      <!-- LINKS -->
 
       <div
         id="tab-links"
@@ -685,13 +688,13 @@
             target="_blank"
             rel="noopener noreferrer"
           >
+
             <strong>
               Check Current Price &amp; Book
             </strong>
 
             <span>
-              Search Norwegian Jewel January 2028 sailings directly
-              through Norwegian Cruise Line
+              Search Norwegian Jewel January 2028 sailings.
             </span>
 
           </a>
@@ -703,12 +706,13 @@
             target="_blank"
             rel="noopener noreferrer"
           >
+
             <strong>
               Norwegian Jewel Ship Page
             </strong>
 
             <span>
-              Ship overview, photos, facts, and onboard information
+              Ship information, photos, and details.
             </span>
 
           </a>
@@ -720,12 +724,13 @@
             target="_blank"
             rel="noopener noreferrer"
           >
+
             <strong>
-              Dining on Norwegian Jewel
+              Dining
             </strong>
 
             <span>
-              Complimentary and specialty dining information
+              Complimentary and specialty dining.
             </span>
 
           </a>
@@ -737,12 +742,13 @@
             target="_blank"
             rel="noopener noreferrer"
           >
+
             <strong>
               Bars &amp; Lounges
             </strong>
 
             <span>
-              Ship nightlife, lounges, drinks, and hangouts
+              Nightlife and onboard bars.
             </span>
 
           </a>
@@ -754,29 +760,13 @@
             target="_blank"
             rel="noopener noreferrer"
           >
+
             <strong>
               Deck Plans
             </strong>
 
             <span>
-              Figure out where everything is before we sail
-            </span>
-
-          </a>
-
-
-          <a
-            class="link-card"
-            href="https://www.ncl.com/sites/default/files/norwegian_jewel_ship_map_guide_06_13_25.pdf"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <strong>
-              Official Ship Map Guide PDF
-            </strong>
-
-            <span>
-              Quick visual guide to the Norwegian Jewel
+              View the Norwegian Jewel layout.
             </span>
 
           </a>
@@ -788,7 +778,6 @@
     </section>
 
   </main>
-
 
 
   <script src="js/supabase-client.js"></script>
