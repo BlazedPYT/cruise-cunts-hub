@@ -11,6 +11,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   const requestMessage =
     document.getElementById("reservation-request-message");
 
+  const memberReservationInput =
+    document.getElementById("member-reservation-number");
+
+  const memberReservationSubmitBtn =
+    document.getElementById("member-reservation-submit-btn");
+
+  const memberReservationStatus =
+    document.getElementById("member-reservation-status");
+
   const tabButtons =
     document.querySelectorAll(".tab-btn");
 
@@ -50,25 +59,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   /*
     --------------------------------------------------
-    SUPABASE CHECK
+    SUPABASE
     --------------------------------------------------
   */
 
   if (!window.supabaseClient) {
     console.error("Supabase client did not load.");
-
-    if (requestMessage) {
-      requestMessage.textContent =
-        "Could not connect to the member system.";
-    }
-
     return;
   }
 
 
   /*
     --------------------------------------------------
-    CURRENT USER
+    AUTH
     --------------------------------------------------
   */
 
@@ -104,16 +107,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       const {
         data: { user },
-        error: userError,
       } =
         await window.supabaseClient.auth.getUser();
-
-      if (userError) {
-        console.error(
-          "GET USER ERROR:",
-          userError
-        );
-      }
 
       if (user) {
         currentUser =
@@ -127,12 +122,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-
-  /*
-    --------------------------------------------------
-    NO ACTIVE SESSION
-    --------------------------------------------------
-  */
 
   if (!currentUser) {
     const main =
@@ -148,32 +137,18 @@ document.addEventListener("DOMContentLoaded", async () => {
             text-align: center;
           "
         >
-          <h1>
-            Login Required
-          </h1>
-
-          <p class="lead">
-            Your login session could not be found.
-          </p>
+          <h1>Login Required</h1>
 
           <p>
             Log back in to view the current cruise.
           </p>
 
-          <div
-            class="button-row"
-            style="
-              justify-content: center;
-              margin-top: 1.5rem;
-            "
+          <a
+            class="btn btn-primary"
+            href="login.html"
           >
-            <a
-              class="btn btn-primary"
-              href="login.html"
-            >
-              Go to Login
-            </a>
-          </div>
+            Go to Login
+          </a>
         </section>
       `;
     }
@@ -202,7 +177,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       );
     } catch (err) {
       console.error(
-        "NOTIFICATION SETUP ERROR:",
+        "NOTIFICATION ERROR:",
         err
       );
     }
@@ -220,14 +195,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       "click",
       async () => {
 
-        try {
-          await window.supabaseClient.auth.signOut();
-        } catch (err) {
-          console.error(
-            "LOGOUT ERROR:",
-            err
-          );
-        }
+        await window.supabaseClient.auth.signOut();
 
         window.location.href =
           "login.html";
@@ -238,7 +206,353 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   /*
     --------------------------------------------------
-    LOAD APPROVED SHARED CABIN INFO
+    MY RESERVATION
+    --------------------------------------------------
+  */
+
+  async function loadMyReservation() {
+    if (
+      !memberReservationStatus ||
+      !memberReservationSubmitBtn
+    ) {
+      return;
+    }
+
+
+    const {
+      data,
+      error,
+    } =
+      await window.supabaseClient
+        .from("member_reservations")
+        .select(`
+          id,
+          reservation_number,
+          status,
+          created_at,
+          reviewed_at
+        `)
+        .eq(
+          "user_id",
+          user.id
+        )
+        .order(
+          "created_at",
+          {
+            ascending: false,
+          }
+        )
+        .limit(1);
+
+
+    if (error) {
+      console.error(
+        "LOAD MEMBER RESERVATION ERROR:",
+        error
+      );
+
+      memberReservationStatus.textContent =
+        "Could not load your reservation status.";
+
+      return;
+    }
+
+
+    if (
+      !data ||
+      data.length === 0
+    ) {
+      memberReservationStatus.innerHTML = `
+        <p class="small-text">
+          You have not submitted a reservation yet.
+        </p>
+      `;
+
+      memberReservationSubmitBtn.disabled =
+        false;
+
+      memberReservationSubmitBtn.textContent =
+        "Submit My Reservation";
+
+      if (memberReservationInput) {
+        memberReservationInput.disabled =
+          false;
+      }
+
+      return;
+    }
+
+
+    const reservation =
+      data[0];
+
+
+    if (
+      memberReservationInput
+    ) {
+      memberReservationInput.value =
+        reservation.reservation_number || "";
+    }
+
+
+    if (
+      reservation.status ===
+      "pending"
+    ) {
+      memberReservationStatus.innerHTML = `
+        <div class="mini-card">
+          <h3>
+            ⏳ Reservation Pending Approval
+          </h3>
+
+          <p>
+            <strong>
+              Reservation Number:
+            </strong>
+            ${reservation.reservation_number}
+          </p>
+
+          <p class="small-text">
+            An admin still needs to review your booking.
+          </p>
+        </div>
+      `;
+
+      memberReservationSubmitBtn.disabled =
+        true;
+
+      memberReservationSubmitBtn.textContent =
+        "Pending Approval";
+
+      if (memberReservationInput) {
+        memberReservationInput.disabled =
+          true;
+      }
+
+      return;
+    }
+
+
+    if (
+      reservation.status ===
+      "approved"
+    ) {
+      memberReservationStatus.innerHTML = `
+        <div class="mini-card">
+          <h3>
+            ✅ Reservation Approved
+          </h3>
+
+          <p>
+            <strong>
+              Your Reservation Number:
+            </strong>
+            ${reservation.reservation_number}
+          </p>
+
+          <p class="small-text">
+            You're confirmed as booked on the current group cruise.
+          </p>
+        </div>
+      `;
+
+      memberReservationSubmitBtn.disabled =
+        true;
+
+      memberReservationSubmitBtn.textContent =
+        "Reservation Approved";
+
+      if (memberReservationInput) {
+        memberReservationInput.disabled =
+          true;
+      }
+
+      return;
+    }
+
+
+    if (
+      reservation.status ===
+      "declined"
+    ) {
+      memberReservationStatus.innerHTML = `
+        <div class="mini-card">
+          <h3>
+            ❌ Reservation Not Approved
+          </h3>
+
+          <p class="small-text">
+            Your previous reservation submission was declined.
+            You can submit another reservation number below.
+          </p>
+        </div>
+      `;
+
+      memberReservationSubmitBtn.disabled =
+        false;
+
+      memberReservationSubmitBtn.textContent =
+        "Submit Another Reservation";
+
+      if (memberReservationInput) {
+        memberReservationInput.disabled =
+          false;
+
+        memberReservationInput.value =
+          "";
+      }
+    }
+  }
+
+
+  /*
+    --------------------------------------------------
+    SUBMIT MY RESERVATION
+    --------------------------------------------------
+  */
+
+  if (
+    memberReservationSubmitBtn &&
+    memberReservationInput
+  ) {
+    memberReservationSubmitBtn.addEventListener(
+      "click",
+      async () => {
+
+        const reservationNumber =
+          memberReservationInput.value.trim();
+
+
+        if (!reservationNumber) {
+          memberReservationStatus.innerHTML = `
+            <p>
+              Enter your NCL reservation number first.
+            </p>
+          `;
+
+          return;
+        }
+
+
+        memberReservationSubmitBtn.disabled =
+          true;
+
+        memberReservationSubmitBtn.textContent =
+          "Submitting...";
+
+
+        const {
+          error,
+        } =
+          await window.supabaseClient
+            .from("member_reservations")
+            .insert({
+              user_id:
+                user.id,
+
+              reservation_number:
+                reservationNumber,
+
+              status:
+                "pending",
+            });
+
+
+        if (error) {
+          console.error(
+            "SUBMIT MEMBER RESERVATION ERROR:",
+            error
+          );
+
+
+          if (
+            error.code ===
+            "23505"
+          ) {
+            memberReservationStatus.innerHTML = `
+              <p>
+                You already have a pending or approved reservation.
+              </p>
+            `;
+          } else {
+            memberReservationStatus.innerHTML = `
+              <p>
+                Could not submit reservation: ${error.message}
+              </p>
+            `;
+          }
+
+
+          memberReservationSubmitBtn.disabled =
+            false;
+
+          memberReservationSubmitBtn.textContent =
+            "Submit My Reservation";
+
+          return;
+        }
+
+
+        /*
+          CREATE NOTIFICATION
+        */
+
+        if (
+          typeof window.createNotification ===
+          "function"
+        ) {
+          try {
+            const {
+              data: profile,
+            } =
+              await window.supabaseClient
+                .from("profiles")
+                .select(
+                  "display_name,email"
+                )
+                .eq(
+                  "id",
+                  user.id
+                )
+                .single();
+
+
+            const person =
+              profile?.display_name ||
+              profile?.email ||
+              user.email ||
+              "A member";
+
+
+            await window.createNotification({
+              type:
+                "member_reservation",
+
+              title:
+                "Cruise Reservation Submitted",
+
+              message:
+                `${person} submitted a cruise reservation for approval.`,
+            });
+
+          } catch (err) {
+            console.error(
+              "RESERVATION NOTIFICATION ERROR:",
+              err
+            );
+          }
+        }
+
+
+        await loadMyReservation();
+      }
+    );
+  }
+
+
+  /*
+    --------------------------------------------------
+    GROUP CABIN PRIVATE INFO
     --------------------------------------------------
   */
 
@@ -247,141 +561,112 @@ document.addEventListener("DOMContentLoaded", async () => {
       return false;
     }
 
-    try {
-      const {
-        data,
-        error,
-      } =
-        await window.supabaseClient
-          .from("cruise_private_info")
-          .select("reservation_number")
-          .eq(
-            "id",
-            "current_cruise"
-          )
-          .maybeSingle();
+
+    const {
+      data,
+      error,
+    } =
+      await window.supabaseClient
+        .from(
+          "cruise_private_info"
+        )
+        .select(
+          "reservation_number"
+        )
+        .eq(
+          "id",
+          "current_cruise"
+        )
+        .maybeSingle();
 
 
-      if (error) {
-        console.error(
-          "PRIVATE CRUISE INFO ERROR:",
-          error
-        );
-
-        return false;
-      }
-
-
-      /*
-        If RLS does not allow the member
-        to see this row, there will be no data.
-      */
-
-      if (
-        !data?.reservation_number
-      ) {
-        return false;
-      }
-
-
-      const reservationNumber =
-        data.reservation_number;
-
-
-      requestMessage.innerHTML = `
-        <div
-          class="mini-card"
-          style="
-            margin-top: 1rem;
-            text-align: left;
-          "
-        >
-
-          <h3>
-            ✅ Group Cabin Reservation Info Unlocked
-          </h3>
-
-          <p>
-            <strong>
-              Shared Reservation:
-            </strong>
-            Daniel Murphy &amp; Jonathan Morris
-          </p>
-
-          <p>
-            <strong>
-              Reservation Number:
-            </strong>
-          </p>
-
-          <p
-            style="
-              font-size: 1.4rem;
-              font-weight: 700;
-              letter-spacing: 0.05em;
-            "
-          >
-            ${reservationNumber}
-          </p>
-
-          <p>
-            This reservation number belongs to
-            <strong>Daniel and Jonathan's shared stateroom booking</strong>.
-          </p>
-
-          <p>
-            If you have your own separate reservation,
-            contact Norwegian Cruise Line and tell them
-            you're traveling with Daniel and Jonathan's
-            reservation.
-          </p>
-
-          <p class="small-text">
-            Ask whether your reservations can be associated
-            for traveling together and whether nearby
-            stateroom placement is available.
-          </p>
-
-          <p class="small-text">
-            Nearby cabins are not guaranteed and remain
-            subject to NCL availability.
-          </p>
-
-        </div>
-      `;
-
-
-      if (requestBtn) {
-        requestBtn.disabled =
-          true;
-
-        requestBtn.textContent =
-          "Group Cabin Info Unlocked";
-      }
-
-
-      if (requestNote) {
-        requestNote.disabled =
-          true;
-      }
-
-
-      return true;
-
-    } catch (err) {
+    if (error) {
       console.error(
-        "LOAD PRIVATE RESERVATION INFO CRASH:",
-        err
+        "PRIVATE CRUISE INFO ERROR:",
+        error
       );
 
       return false;
     }
+
+
+    if (
+      !data?.reservation_number
+    ) {
+      return false;
+    }
+
+
+    requestMessage.innerHTML = `
+      <div class="mini-card">
+
+        <h3>
+          ✅ Group Cabin Reservation Info Unlocked
+        </h3>
+
+        <p>
+          <strong>
+            Shared Reservation:
+          </strong>
+          Daniel Murphy &amp; Jonathan Morris
+        </p>
+
+        <p>
+          <strong>
+            Reservation Number:
+          </strong>
+        </p>
+
+        <p
+          style="
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+          "
+        >
+          ${data.reservation_number}
+        </p>
+
+        <p>
+          This reservation number belongs to
+          <strong>
+            Daniel and Jonathan's shared stateroom booking.
+          </strong>
+        </p>
+
+        <p class="small-text">
+          Contact Norwegian Cruise Line and tell them
+          you're traveling with this reservation.
+          Ask whether your reservations can be associated
+          and whether nearby stateroom placement is available.
+        </p>
+
+      </div>
+    `;
+
+
+    if (requestBtn) {
+      requestBtn.disabled =
+        true;
+
+      requestBtn.textContent =
+        "Group Cabin Info Unlocked";
+    }
+
+
+    if (requestNote) {
+      requestNote.disabled =
+        true;
+    }
+
+
+    return true;
   }
 
 
   /*
     --------------------------------------------------
-    CHECK EXISTING REQUEST
+    CHECK GROUP CABIN REQUEST
     --------------------------------------------------
   */
 
@@ -394,85 +679,72 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
-    try {
-      const {
-        data,
-        error,
-      } =
-        await window.supabaseClient
-          .from("reservation_requests")
-          .select(`
-            id,
-            status,
-            note,
-            created_at
-          `)
-          .eq(
-            "user_id",
-            user.id
-          )
-          .order(
-            "created_at",
-            {
-              ascending: false,
-            }
-          )
-          .limit(1);
+    const {
+      data,
+      error,
+    } =
+      await window.supabaseClient
+        .from(
+          "reservation_requests"
+        )
+        .select(`
+          id,
+          status,
+          note,
+          created_at
+        `)
+        .eq(
+          "user_id",
+          user.id
+        )
+        .order(
+          "created_at",
+          {
+            ascending: false,
+          }
+        )
+        .limit(1);
 
 
-      if (error) {
-        console.error(
-          "RESERVATION REQUEST LOAD ERROR:",
-          error
-        );
+    if (error) {
+      console.error(
+        "RESERVATION REQUEST LOAD ERROR:",
+        error
+      );
 
-        requestMessage.textContent =
-          "Reservation request feature is temporarily unavailable.";
-
-        return;
-      }
+      return;
+    }
 
 
-      if (
-        !data ||
-        data.length === 0
-      ) {
-        requestBtn.disabled =
-          false;
+    if (
+      !data ||
+      data.length === 0
+    ) {
+      requestBtn.disabled =
+        false;
 
-        requestBtn.textContent =
-          "Request Group Cabin Reservation Info";
+      requestBtn.textContent =
+        "Request Group Cabin Reservation Info";
 
-        requestMessage.textContent =
-          "";
-
-        return;
-      }
+      return;
+    }
 
 
-      const latestRequest =
-        data[0];
+    const latest =
+      data[0];
 
 
-      /*
-        APPROVED OR COMPLETED
-      */
-
-      if (
-        latestRequest.status ===
-          "approved" ||
-        latestRequest.status ===
-          "completed"
-      ) {
-        const revealed =
-          await loadApprovedReservationInfo();
+    if (
+      latest.status ===
+        "approved" ||
+      latest.status ===
+        "completed"
+    ) {
+      const revealed =
+        await loadApprovedReservationInfo();
 
 
-        if (revealed) {
-          return;
-        }
-
-
+      if (!revealed) {
         requestBtn.disabled =
           true;
 
@@ -480,68 +752,49 @@ document.addEventListener("DOMContentLoaded", async () => {
           "Approved";
 
         requestMessage.textContent =
-          "Your request was approved, but the shared cabin reservation information could not be loaded. Contact an admin.";
-
-        return;
+          "Your request is approved, but the shared cabin reservation information could not be loaded.";
       }
 
-
-      /*
-        PENDING
-      */
-
-      if (
-        latestRequest.status ===
-        "pending"
-      ) {
-        requestBtn.disabled =
-          true;
-
-        requestBtn.textContent =
-          "Request Pending";
-
-        requestMessage.textContent =
-          "Your request for Daniel and Jonathan's shared cabin reservation information is waiting for an admin.";
-
-        return;
-      }
+      return;
+    }
 
 
-      /*
-        DECLINED
-      */
+    if (
+      latest.status ===
+      "pending"
+    ) {
+      requestBtn.disabled =
+        true;
 
-      if (
-        latestRequest.status ===
-        "declined"
-      ) {
-        requestBtn.disabled =
-          false;
-
-        requestBtn.textContent =
-          "Request Group Cabin Reservation Info";
-
-        requestMessage.textContent =
-          "Your previous request was declined. You may submit another request.";
-
-        return;
-      }
-
-    } catch (err) {
-      console.error(
-        "RESERVATION REQUEST CHECK CRASH:",
-        err
-      );
+      requestBtn.textContent =
+        "Request Pending";
 
       requestMessage.textContent =
-        "Reservation request feature is temporarily unavailable.";
+        "Your request is waiting for an admin.";
+
+      return;
+    }
+
+
+    if (
+      latest.status ===
+      "declined"
+    ) {
+      requestBtn.disabled =
+        false;
+
+      requestBtn.textContent =
+        "Request Group Cabin Reservation Info";
+
+      requestMessage.textContent =
+        "Your previous request was declined. You may submit another request.";
     }
   }
 
 
   /*
     --------------------------------------------------
-    CREATE REQUEST
+    CREATE GROUP CABIN REQUEST
     --------------------------------------------------
   */
 
@@ -562,138 +815,61 @@ document.addEventListener("DOMContentLoaded", async () => {
           "";
 
 
-        try {
-          const {
-            data: profile,
-            error: profileError,
-          } =
-            await window.supabaseClient
-              .from("profiles")
-              .select(`
-                display_name,
-                email
-              `)
-              .eq(
-                "id",
-                user.id
-              )
-              .single();
+        const {
+          error,
+        } =
+          await window.supabaseClient
+            .from(
+              "reservation_requests"
+            )
+            .insert({
+              user_id:
+                user.id,
+
+              note:
+                note || null,
+
+              status:
+                "pending",
+            });
 
 
-          if (profileError) {
-            console.error(
-              "PROFILE LOAD ERROR:",
-              profileError
-            );
-          }
-
-
-          const {
-            error: insertError,
-          } =
-            await window.supabaseClient
-              .from(
-                "reservation_requests"
-              )
-              .insert({
-                user_id:
-                  user.id,
-
-                note:
-                  note || null,
-
-                status:
-                  "pending",
-              });
-
-
-          if (insertError) {
-            console.error(
-              "RESERVATION REQUEST INSERT ERROR:",
-              insertError
-            );
-
-
-            if (
-              insertError.code ===
-              "23505"
-            ) {
-              requestBtn.disabled =
-                true;
-
-              requestBtn.textContent =
-                "Request Pending";
-
-              requestMessage.textContent =
-                "You already have a pending request.";
-            } else {
-              requestBtn.disabled =
-                false;
-
-              requestMessage.textContent =
-                `Could not send request: ${insertError.message}`;
-            }
-
-            return;
-          }
-
-
-          const person =
-            profile?.display_name ||
-            profile?.email ||
-            user.email ||
-            "A member";
+        if (error) {
+          console.error(
+            "GROUP RESERVATION REQUEST ERROR:",
+            error
+          );
 
 
           if (
-            typeof window.createNotification ===
-            "function"
+            error.code ===
+            "23505"
           ) {
-            try {
-              await window.createNotification({
-                type:
-                  "reservation_request",
+            requestBtn.disabled =
+              true;
 
-                title:
-                  "Group Cabin Info Requested",
+            requestBtn.textContent =
+              "Request Pending";
 
-                message:
-                  `${person} requested Daniel and Jonathan's shared cabin reservation information.` +
-                  `${note ? ` Note: ${note}` : ""}`,
-              });
+            requestMessage.textContent =
+              "You already have a pending request.";
+          } else {
+            requestBtn.disabled =
+              false;
 
-            } catch (
-              notificationError
-            ) {
-              console.error(
-                "RESERVATION NOTIFICATION ERROR:",
-                notificationError
-              );
-            }
+            requestMessage.textContent =
+              error.message;
           }
 
-
-          requestBtn.disabled =
-            true;
-
-          requestBtn.textContent =
-            "Request Pending";
-
-          requestMessage.textContent =
-            "Request sent! An admin can now review it.";
-
-        } catch (err) {
-          console.error(
-            "RESERVATION REQUEST CRASH:",
-            err
-          );
-
-          requestBtn.disabled =
-            false;
-
-          requestMessage.textContent =
-            "Could not send the request.";
+          return;
         }
+
+
+        requestBtn.textContent =
+          "Request Pending";
+
+        requestMessage.textContent =
+          "Request sent! An admin can now review it.";
       }
     );
   }
@@ -704,6 +880,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     INITIAL LOAD
     --------------------------------------------------
   */
+
+  await loadMyReservation();
 
   await checkExistingReservationRequest();
 });
