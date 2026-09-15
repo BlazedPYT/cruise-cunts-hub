@@ -1,8 +1,7 @@
 document.addEventListener("DOMContentLoaded", async () => {
-
   /*
     --------------------------------------------------
-    DOM ELEMENTS
+    DOM
     --------------------------------------------------
   */
 
@@ -10,29 +9,41 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("user-list");
 
   const requestList =
-    document.getElementById("reservation-request-list");
+    document.getElementById(
+      "reservation-request-list"
+    );
 
   const adminMessage =
-    document.getElementById("admin-message");
+    document.getElementById(
+      "admin-message"
+    );
 
   const logoutBtn =
-    document.getElementById("logout-btn");
+    document.getElementById(
+      "logout-btn"
+    );
 
   const createMemberForm =
-    document.getElementById("create-member-form");
+    document.getElementById(
+      "create-member-form"
+    );
 
   const createMemberMessage =
-    document.getElementById("create-member-message");
+    document.getElementById(
+      "create-member-message"
+    );
 
 
   /*
     --------------------------------------------------
-    SUPABASE CHECK
+    SUPABASE
     --------------------------------------------------
   */
 
   if (!window.supabaseClient) {
-    console.error("Supabase client is not available.");
+    console.error(
+      "Supabase client is not available."
+    );
 
     if (adminMessage) {
       adminMessage.textContent =
@@ -56,22 +67,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     await window.supabaseClient.auth.getSession();
 
 
-  if (sessionError) {
+  if (
+    sessionError ||
+    !session?.user
+  ) {
     console.error(
       "ADMIN SESSION ERROR:",
       sessionError
     );
 
-    if (adminMessage) {
-      adminMessage.textContent =
-        "Could not verify your login.";
-    }
-
-    return;
-  }
-
-
-  if (!session?.user) {
     window.location.href =
       "login.html";
 
@@ -95,30 +99,29 @@ document.addEventListener("DOMContentLoaded", async () => {
   } =
     await window.supabaseClient
       .from("profiles")
-      .select("id, role, display_name, email")
-      .eq("id", user.id)
+      .select(`
+        id,
+        role,
+        display_name,
+        email
+      `)
+      .eq(
+        "id",
+        user.id
+      )
       .single();
 
 
   if (
     adminProfileError ||
-    !adminProfile
+    !adminProfile ||
+    adminProfile.role !== "admin"
   ) {
     console.error(
       "ADMIN PROFILE ERROR:",
       adminProfileError
     );
 
-    window.location.href =
-      "dashboard.html";
-
-    return;
-  }
-
-
-  if (
-    adminProfile.role !== "admin"
-  ) {
     window.location.href =
       "dashboard.html";
 
@@ -194,9 +197,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function callAdminMemberTools(
     payload
   ) {
-
     try {
-
       const {
         data: { session },
         error,
@@ -219,7 +220,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         await fetch(
           "https://vhpbmkdtlajdohhxawno.supabase.co/functions/v1/admin-member-tools",
           {
-            method: "POST",
+            method:
+              "POST",
 
             headers: {
               "Content-Type":
@@ -261,7 +263,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       return result;
 
     } catch (err) {
-
       console.error(
         "ADMIN EDGE FUNCTION ERROR:",
         err
@@ -279,21 +280,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   /*
     --------------------------------------------------
-    RESERVATION REQUESTS
+    LOAD RESERVATION REQUESTS
     --------------------------------------------------
   */
 
   async function loadReservationRequests() {
-
     if (!requestList) {
       return;
     }
 
 
-    requestList.innerHTML =
-      `<p class="small-text">
+    requestList.innerHTML = `
+      <p class="small-text">
         Loading reservation requests...
-      </p>`;
+      </p>
+    `;
 
 
     const {
@@ -301,7 +302,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       error,
     } =
       await window.supabaseClient
-        .from("reservation_requests")
+        .from(
+          "reservation_requests"
+        )
         .select(`
           id,
           user_id,
@@ -318,23 +321,24 @@ document.addEventListener("DOMContentLoaded", async () => {
         .order(
           "created_at",
           {
-            ascending: false,
+            ascending:
+              false,
           }
         );
 
 
     if (error) {
-
       console.error(
         "LOAD RESERVATION REQUESTS ERROR:",
         error
       );
 
 
-      requestList.innerHTML =
-        `<p class="small-text">
+      requestList.innerHTML = `
+        <p class="small-text">
           Could not load reservation requests.
-        </p>`;
+        </p>
+      `;
 
       return;
     }
@@ -344,12 +348,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       !data ||
       data.length === 0
     ) {
-
-      requestList.innerHTML =
-        `<p class="small-text">
-          Nobody has requested the group reservation
-          information yet.
-        </p>`;
+      requestList.innerHTML = `
+        <p class="small-text">
+          Nobody has requested the group reservation information yet.
+        </p>
+      `;
 
       return;
     }
@@ -358,7 +361,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     requestList.innerHTML =
       data
         .map((request) => {
-
           const person =
             request.profiles?.display_name ||
             request.profiles?.email ||
@@ -386,7 +388,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
           if (
-            request.status === "pending"
+            request.status ===
+            "pending"
           ) {
             statusLabel =
               "⏳ Pending";
@@ -394,23 +397,26 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
           if (
-            request.status === "approved"
+            request.status ===
+            "approved"
           ) {
             statusLabel =
-              "✅ Approved";
+              "✅ Approved — Reservation Number Unlocked";
           }
 
 
           if (
-            request.status === "completed"
+            request.status ===
+            "completed"
           ) {
             statusLabel =
-              "✔ Completed";
+              "✔ Completed — Reservation Number Unlocked";
           }
 
 
           if (
-            request.status === "declined"
+            request.status ===
+            "declined"
           ) {
             statusLabel =
               "❌ Declined";
@@ -425,46 +431,70 @@ document.addEventListener("DOMContentLoaded", async () => {
               </h3>
 
               <p class="user-meta">
-                <strong>Email:</strong>
+                <strong>
+                  Email:
+                </strong>
+
                 ${escapeHtml(email)}
               </p>
 
               <p class="user-meta">
-                <strong>Status:</strong>
+                <strong>
+                  Status:
+                </strong>
+
                 ${escapeHtml(statusLabel)}
               </p>
 
               <p class="user-meta">
-                <strong>Requested:</strong>
+                <strong>
+                  Requested:
+                </strong>
+
                 ${escapeHtml(requestDate)}
               </p>
 
               <p class="user-meta">
-                <strong>Who they want to be near / Notes:</strong>
+                <strong>
+                  Who they want to be near / Notes:
+                </strong>
+
                 ${escapeHtml(note)}
               </p>
+
+
+              ${
+                request.status ===
+                "approved"
+                  ? `
+                    <div class="notice-box">
+                      <strong>
+                        Reservation info unlocked.
+                      </strong>
+
+                      <p class="small-text">
+                        This member can now see the group
+                        reservation number on the Current
+                        Cruise page.
+                      </p>
+                    </div>
+                  `
+                  : ""
+              }
 
 
               <div class="user-actions">
 
                 ${
-                  request.status === "pending"
+                  request.status ===
+                  "pending"
                     ? `
                       <button
                         class="btn btn-primary reservation-approve-btn"
                         data-request-id="${request.id}"
                         type="button"
                       >
-                        Approve
-                      </button>
-
-
-                      <button
-                        class="btn btn-secondary reservation-complete-btn"
-                        data-request-id="${request.id}"
-                        type="button"
-                      >
-                        Mark Completed
+                        Approve &amp; Unlock
                       </button>
 
 
@@ -481,10 +511,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
                 ${
-                  request.status === "approved"
+                  request.status ===
+                  "approved"
                     ? `
                       <button
-                        class="btn btn-primary reservation-complete-btn"
+                        class="btn btn-secondary reservation-complete-btn"
                         data-request-id="${request.id}"
                         type="button"
                       >
@@ -496,8 +527,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
                 ${
-                  request.status === "declined" ||
-                  request.status === "completed"
+                  request.status ===
+                    "declined" ||
+                  request.status ===
+                    "completed"
                     ? `
                       <button
                         class="btn btn-danger reservation-delete-btn"
@@ -524,7 +557,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   /*
     --------------------------------------------------
-    UPDATE REQUEST
+    UPDATE RESERVATION REQUEST
     --------------------------------------------------
   */
 
@@ -532,7 +565,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     requestId,
     newStatus
   ) {
-
     if (adminMessage) {
       adminMessage.textContent =
         "Updating reservation request...";
@@ -543,7 +575,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       error,
     } =
       await window.supabaseClient
-        .from("reservation_requests")
+        .from(
+          "reservation_requests"
+        )
         .update({
           status:
             newStatus,
@@ -561,7 +595,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     if (error) {
-
       console.error(
         "UPDATE RESERVATION REQUEST ERROR:",
         error
@@ -578,8 +611,29 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     if (adminMessage) {
-      adminMessage.textContent =
-        `Reservation request marked ${newStatus}.`;
+      if (
+        newStatus ===
+        "approved"
+      ) {
+        adminMessage.textContent =
+          "Request approved. The member can now securely view the reservation number.";
+      }
+
+      else if (
+        newStatus ===
+        "completed"
+      ) {
+        adminMessage.textContent =
+          "Reservation request marked completed.";
+      }
+
+      else if (
+        newStatus ===
+        "declined"
+      ) {
+        adminMessage.textContent =
+          "Reservation request declined.";
+      }
     }
 
 
@@ -596,7 +650,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function deleteReservationRequest(
     requestId
   ) {
-
     const confirmed =
       confirm(
         "Remove this reservation request?"
@@ -612,7 +665,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       error,
     } =
       await window.supabaseClient
-        .from("reservation_requests")
+        .from(
+          "reservation_requests"
+        )
         .delete()
         .eq(
           "id",
@@ -621,7 +676,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     if (error) {
-
       console.error(
         "DELETE REQUEST ERROR:",
         error
@@ -649,12 +703,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   /*
     --------------------------------------------------
-    RESERVATION BUTTONS
+    REQUEST BUTTONS
     --------------------------------------------------
   */
 
   function bindReservationRequestButtons() {
-
     document
       .querySelectorAll(
         ".reservation-approve-btn"
@@ -738,16 +791,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   */
 
   async function loadUsers() {
-
     if (!userList) {
       return;
     }
 
 
-    userList.innerHTML =
-      `<p class="small-text">
+    userList.innerHTML = `
+      <p class="small-text">
         Loading members...
-      </p>`;
+      </p>
+    `;
 
 
     const {
@@ -767,23 +820,24 @@ document.addEventListener("DOMContentLoaded", async () => {
         .order(
           "created_at",
           {
-            ascending: false,
+            ascending:
+              false,
           }
         );
 
 
     if (error) {
-
       console.error(
         "LOAD USERS ERROR:",
         error
       );
 
 
-      userList.innerHTML =
-        `<p class="small-text">
+      userList.innerHTML = `
+        <p class="small-text">
           Failed to load members.
-        </p>`;
+        </p>
+      `;
 
       return;
     }
@@ -793,11 +847,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       !data ||
       data.length === 0
     ) {
-
-      userList.innerHTML =
-        `<p class="small-text">
+      userList.innerHTML = `
+        <p class="small-text">
           No members found.
-        </p>`;
+        </p>
+      `;
 
       return;
     }
@@ -806,9 +860,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     userList.innerHTML =
       data
         .map((member) => {
-
           const isSelf =
-            member.id === user.id;
+            member.id ===
+            user.id;
 
 
           const name =
@@ -823,18 +877,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                 ${escapeHtml(name)}
               </h3>
 
-
               <p class="user-meta">
                 <strong>Email:</strong>
                 ${escapeHtml(member.email || "")}
               </p>
 
-
               <p class="user-meta">
                 <strong>Approved:</strong>
                 ${member.approved ? "Yes" : "No"}
               </p>
-
 
               <p class="user-meta">
                 <strong>Role:</strong>
@@ -910,11 +961,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   */
 
   function bindMemberButtons() {
-
-    /*
-      APPROVE
-    */
-
     document
       .querySelectorAll(
         ".approve-user-btn"
@@ -949,7 +995,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
             if (error) {
-
               if (adminMessage) {
                 adminMessage.textContent =
                   error.message;
@@ -971,10 +1016,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
 
 
-    /*
-      ROLE
-    */
-
     document
       .querySelectorAll(
         ".role-user-btn"
@@ -993,7 +1034,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
             const newRole =
-              currentRole === "admin"
+              currentRole ===
+              "admin"
                 ? "member"
                 : "admin";
 
@@ -1014,7 +1056,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
             if (error) {
-
               if (adminMessage) {
                 adminMessage.textContent =
                   error.message;
@@ -1035,10 +1076,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         );
       });
 
-
-    /*
-      RESET PASSWORD
-    */
 
     document
       .querySelectorAll(
@@ -1068,7 +1105,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (
               password.length < 6
             ) {
-
               if (adminMessage) {
                 adminMessage.textContent =
                   "Password must be at least 6 characters.";
@@ -1098,7 +1134,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
             if (result.error) {
-
               if (adminMessage) {
                 adminMessage.textContent =
                   result.error;
@@ -1116,10 +1151,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         );
       });
 
-
-    /*
-      DELETE USER
-    */
 
     document
       .querySelectorAll(
@@ -1163,7 +1194,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
             if (result.error) {
-
               if (adminMessage) {
                 adminMessage.textContent =
                   result.error;
@@ -1195,7 +1225,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   */
 
   if (createMemberForm) {
-
     createMemberForm.addEventListener(
       "submit",
       async (event) => {
@@ -1208,7 +1237,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             .getElementById(
               "new-member-name"
             )
-            ?.value.trim() || "";
+            ?.value.trim() ||
+          "";
 
 
         const email =
@@ -1216,7 +1246,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             .getElementById(
               "new-member-email"
             )
-            ?.value.trim() || "";
+            ?.value.trim() ||
+          "";
 
 
         const password =
@@ -1224,14 +1255,14 @@ document.addEventListener("DOMContentLoaded", async () => {
             .getElementById(
               "new-member-password"
             )
-            ?.value || "";
+            ?.value ||
+          "";
 
 
         if (
           !email ||
           !password
         ) {
-
           createMemberMessage.textContent =
             "Email and password are required.";
 
@@ -1242,7 +1273,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (
           password.length < 6
         ) {
-
           createMemberMessage.textContent =
             "Temporary password must be at least 6 characters.";
 
@@ -1255,7 +1285,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
         try {
-
           const {
             data: { session },
           } =
@@ -1265,7 +1294,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           if (
             !session?.access_token
           ) {
-
             createMemberMessage.textContent =
               "Admin session could not be verified.";
 
@@ -1316,7 +1344,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
           if (!response.ok) {
-
             createMemberMessage.textContent =
               result?.error ||
               `Could not create member. Status ${response.status}`;
@@ -1335,7 +1362,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           await loadUsers();
 
         } catch (err) {
-
           console.error(
             "CREATE MEMBER ERROR:",
             err
