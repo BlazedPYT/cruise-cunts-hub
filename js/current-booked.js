@@ -5,51 +5,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   const requestNote = document.getElementById("reservation-request-note");
   const requestMessage = document.getElementById("reservation-request-message");
 
-  // Make sure Supabase loaded
-  if (!window.supabaseClient) {
-    console.error("Supabase client is not available.");
-    return;
-  }
-
-  // Get current session
-  const {
-    data: { session },
-    error: sessionError,
-  } = await window.supabaseClient.auth.getSession();
-
-  if (sessionError) {
-    console.error("SESSION ERROR:", sessionError);
-    return;
-  }
-
-  // Only redirect if the person truly is not logged in
-  if (!session) {
-    window.location.href = "login.html";
-    return;
-  }
-
-  const user = session.user;
-
-  // Notifications
-  if (typeof window.setupNotifications === "function") {
-    try {
-      await window.setupNotifications(user.id);
-    } catch (err) {
-      console.error("NOTIFICATION SETUP ERROR:", err);
-    }
-  }
-
-  // Logout
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", async () => {
-      await window.supabaseClient.auth.signOut();
-      window.location.href = "login.html";
-    });
-  }
-
-  // Tabs
   const tabButtons = document.querySelectorAll(".tab-btn");
   const tabPanels = document.querySelectorAll(".tab-panel");
+
+  /*
+    ----------------------------------------
+    TABS
+    ----------------------------------------
+  */
 
   tabButtons.forEach((button) => {
     button.addEventListener("click", () => {
@@ -73,8 +36,174 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
-  // Reservation request system
-  async function checkExistingRequest() {
+  /*
+    ----------------------------------------
+    SUPABASE CHECK
+    ----------------------------------------
+  */
+
+  if (!window.supabaseClient) {
+    console.error("Supabase client did not load.");
+
+    if (requestMessage) {
+      requestMessage.textContent =
+        "Could not connect to the member system.";
+    }
+
+    return;
+  }
+
+  /*
+    ----------------------------------------
+    GET CURRENT USER
+    ----------------------------------------
+  */
+
+  let currentUser = null;
+
+  try {
+    const {
+      data: { session },
+      error: sessionError,
+    } = await window.supabaseClient.auth.getSession();
+
+    if (sessionError) {
+      console.error("SESSION ERROR:", sessionError);
+    }
+
+    if (session?.user) {
+      currentUser = session.user;
+    }
+  } catch (err) {
+    console.error("GET SESSION CRASH:", err);
+  }
+
+  /*
+    If the session was not immediately available,
+    ask Supabase directly for the current user.
+  */
+
+  if (!currentUser) {
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await window.supabaseClient.auth.getUser();
+
+      if (userError) {
+        console.error("GET USER ERROR:", userError);
+      }
+
+      if (user) {
+        currentUser = user;
+      }
+    } catch (err) {
+      console.error("GET USER CRASH:", err);
+    }
+  }
+
+  /*
+    IMPORTANT:
+    Do NOT auto-redirect here.
+
+    If the login session cannot be found,
+    show a login-required message instead.
+    This prevents page-refresh loops.
+  */
+
+  if (!currentUser) {
+    console.warn("No active login session found.");
+
+    const main = document.querySelector("main");
+
+    if (main) {
+      main.innerHTML = `
+        <section
+          class="card"
+          style="
+            max-width: 720px;
+            margin: 2rem auto;
+            text-align: center;
+          "
+        >
+          <h1>Login Required</h1>
+
+          <p class="lead">
+            Your login session could not be found.
+          </p>
+
+          <p>
+            Log back in to view the current cruise.
+          </p>
+
+          <div
+            class="button-row"
+            style="
+              justify-content: center;
+              margin-top: 1.5rem;
+            "
+          >
+            <a
+              class="btn btn-primary"
+              href="login.html"
+            >
+              Go to Login
+            </a>
+          </div>
+        </section>
+      `;
+    }
+
+    return;
+  }
+
+  const user = currentUser;
+
+  console.log(
+    "CURRENT BOOKED USER:",
+    user.id,
+    user.email
+  );
+
+  /*
+    ----------------------------------------
+    NOTIFICATIONS
+    ----------------------------------------
+  */
+
+  if (typeof window.setupNotifications === "function") {
+    try {
+      await window.setupNotifications(user.id);
+    } catch (err) {
+      console.error("NOTIFICATION SETUP ERROR:", err);
+    }
+  }
+
+  /*
+    ----------------------------------------
+    LOGOUT
+    ----------------------------------------
+  */
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", async () => {
+      try {
+        await window.supabaseClient.auth.signOut();
+      } catch (err) {
+        console.error("LOGOUT ERROR:", err);
+      }
+
+      window.location.href = "login.html";
+    });
+  }
+
+  /*
+    ----------------------------------------
+    CHECK EXISTING RESERVATION REQUEST
+    ----------------------------------------
+  */
+
+  async function checkExistingReservationRequest() {
     if (!requestBtn || !requestMessage) {
       return;
     }
@@ -82,46 +211,96 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       const { data, error } = await window.supabaseClient
         .from("reservation_requests")
-        .select("id, status, created_at")
+        .select(`
+          id,
+          status,
+          note,
+          created_at
+        `)
         .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
+        .order("created_at", {
+          ascending: false,
+        })
         .limit(1);
 
       if (error) {
-        console.error("RESERVATION REQUEST LOAD ERROR:", error);
+        console.error(
+          "RESERVATION REQUEST LOAD ERROR:",
+          error
+        );
 
         requestMessage.textContent =
-          "Reservation request system is temporarily unavailable.";
+          "Reservation request feature is temporarily unavailable.";
 
         return;
       }
 
       if (!data || data.length === 0) {
+        requestBtn.disabled = false;
+
+        requestBtn.textContent =
+          "Request Group Reservation Info";
+
+        requestMessage.textContent = "";
+
         return;
       }
 
-      const request = data[0];
+      const latestRequest = data[0];
 
-      if (request.status === "pending") {
+      if (latestRequest.status === "pending") {
         requestBtn.disabled = true;
         requestBtn.textContent = "Request Pending";
 
         requestMessage.textContent =
-          "Your reservation information request is waiting for an admin.";
-      } else if (request.status === "approved") {
+          "Your request is waiting for an admin.";
+      }
+
+      else if (latestRequest.status === "approved") {
+        requestBtn.disabled = false;
+
+        requestBtn.textContent =
+          "Request Group Reservation Info";
+
         requestMessage.textContent =
-          "Your request was approved. Contact an admin for the group reservation information.";
-      } else if (request.status === "completed") {
+          "Your previous request was approved. Contact an admin for the group reservation information.";
+      }
+
+      else if (latestRequest.status === "completed") {
+        requestBtn.disabled = false;
+
+        requestBtn.textContent =
+          "Request Group Reservation Info";
+
         requestMessage.textContent =
-          "Your reservation information request was completed.";
-      } else if (request.status === "declined") {
+          "Your previous reservation request was completed.";
+      }
+
+      else if (latestRequest.status === "declined") {
+        requestBtn.disabled = false;
+
+        requestBtn.textContent =
+          "Request Group Reservation Info";
+
         requestMessage.textContent =
           "Your previous request was declined. You may submit another request.";
       }
     } catch (err) {
-      console.error("RESERVATION REQUEST CHECK CRASH:", err);
+      console.error(
+        "RESERVATION REQUEST CHECK CRASH:",
+        err
+      );
+
+      requestMessage.textContent =
+        "Reservation request feature is temporarily unavailable.";
     }
   }
+
+  /*
+    ----------------------------------------
+    CREATE RESERVATION REQUEST
+    ----------------------------------------
+  */
 
   if (requestBtn) {
     requestBtn.addEventListener("click", async () => {
@@ -130,28 +309,47 @@ document.addEventListener("DOMContentLoaded", async () => {
       requestMessage.textContent =
         "Sending request...";
 
-      const note = requestNote?.value.trim() || "";
+      const note =
+        requestNote?.value?.trim() || "";
 
       try {
-        const { data: profile, error: profileError } =
-          await window.supabaseClient
-            .from("profiles")
-            .select("display_name, email")
-            .eq("id", user.id)
-            .single();
+        /*
+          Load profile so the notification has
+          the member's display name.
+        */
+
+        const {
+          data: profile,
+          error: profileError,
+        } = await window.supabaseClient
+          .from("profiles")
+          .select(`
+            display_name,
+            email
+          `)
+          .eq("id", user.id)
+          .single();
 
         if (profileError) {
-          console.error("PROFILE LOAD ERROR:", profileError);
+          console.error(
+            "PROFILE LOAD ERROR:",
+            profileError
+          );
         }
 
-        const { error: insertError } =
-          await window.supabaseClient
-            .from("reservation_requests")
-            .insert({
-              user_id: user.id,
-              note: note || null,
-              status: "pending",
-            });
+        /*
+          Create request
+        */
+
+        const {
+          error: insertError,
+        } = await window.supabaseClient
+          .from("reservation_requests")
+          .insert({
+            user_id: user.id,
+            note: note || null,
+            status: "pending",
+          });
 
         if (insertError) {
           console.error(
@@ -160,24 +358,29 @@ document.addEventListener("DOMContentLoaded", async () => {
           );
 
           if (insertError.code === "23505") {
-            requestMessage.textContent =
-              "You already have a pending request.";
+            requestBtn.disabled = true;
+            requestBtn.textContent = "Request Pending";
 
-            requestBtn.textContent =
-              "Request Pending";
+            requestMessage.textContent =
+              "You already have a pending reservation request.";
           } else {
-            requestMessage.textContent =
-              "Could not send your request.";
-
             requestBtn.disabled = false;
+
+            requestMessage.textContent =
+              `Could not send request: ${insertError.message}`;
           }
 
           return;
         }
 
+        /*
+          Create group notification
+        */
+
         const person =
           profile?.display_name ||
           profile?.email ||
+          user.email ||
           "A member";
 
         if (typeof window.createNotification === "function") {
@@ -197,8 +400,8 @@ document.addEventListener("DOMContentLoaded", async () => {
           }
         }
 
-        requestBtn.textContent =
-          "Request Pending";
+        requestBtn.disabled = true;
+        requestBtn.textContent = "Request Pending";
 
         requestMessage.textContent =
           "Request sent! An admin can now review it.";
@@ -208,13 +411,19 @@ document.addEventListener("DOMContentLoaded", async () => {
           err
         );
 
+        requestBtn.disabled = false;
+
         requestMessage.textContent =
           "Could not send the request.";
-
-        requestBtn.disabled = false;
       }
     });
   }
 
-  await checkExistingRequest();
+  /*
+    ----------------------------------------
+    INITIAL LOAD
+    ----------------------------------------
+  */
+
+  await checkExistingReservationRequest();
 });
