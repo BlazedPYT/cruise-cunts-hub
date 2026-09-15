@@ -1,452 +1,765 @@
-document.addEventListener("DOMContentLoaded", async () => {
-  const logoutBtn = document.getElementById("logout-btn");
-  const requestBtn = document.getElementById("reservation-request-btn");
-  const requestNote = document.getElementById("reservation-request-note");
-  const requestMessage = document.getElementById("reservation-request-message");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  const tabButtons = document.querySelectorAll(".tab-btn");
-  const tabPanels = document.querySelectorAll(".tab-panel");
+  <title>Current Booked | Cruise Cunts Hub</title>
 
-  /*
-    --------------------------------------------------
-    TAB SYSTEM
-    --------------------------------------------------
-  */
+  <link rel="stylesheet" href="style.css" />
 
-  tabButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      const target = button.dataset.tab;
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
 
-      tabButtons.forEach((btn) => {
-        btn.classList.remove("active");
-      });
+<body>
 
-      tabPanels.forEach((panel) => {
-        panel.classList.remove("active");
-      });
+  <header class="topbar">
+    <div class="container topbar-inner">
 
-      button.classList.add("active");
+      <div>
+        <h2 class="site-title">Cruise Cunts Hub</h2>
+        <p class="small-text">Private group cruise details</p>
+      </div>
 
-      const targetPanel = document.getElementById(target);
+      <div class="button-row">
 
-      if (targetPanel) {
-        targetPanel.classList.add("active");
-      }
-    });
-  });
+        <a href="photos.html" class="btn btn-secondary">
+          Photos
+        </a>
 
-  /*
-    --------------------------------------------------
-    SUPABASE CHECK
-    --------------------------------------------------
-  */
+        <a href="dashboard.html" class="btn btn-secondary">
+          Back to Dashboard
+        </a>
 
-  if (!window.supabaseClient) {
-    console.error("Supabase client did not load.");
-
-    if (requestMessage) {
-      requestMessage.textContent =
-        "Could not connect to the member system.";
-    }
-
-    return;
-  }
-
-  /*
-    --------------------------------------------------
-    AUTH
-    --------------------------------------------------
-
-    IMPORTANT:
-    We do NOT immediately redirect when getSession()
-    temporarily returns null.
-
-    We first wait for Supabase to restore the session.
-    --------------------------------------------------
-  */
-
-  let currentUser = null;
-
-  try {
-    const {
-      data: { session },
-      error: sessionError,
-    } = await window.supabaseClient.auth.getSession();
-
-    if (sessionError) {
-      console.error("SESSION ERROR:", sessionError);
-    }
-
-    if (session?.user) {
-      currentUser = session.user;
-    }
-  } catch (err) {
-    console.error("GET SESSION CRASH:", err);
-  }
-
-  /*
-    If getSession did not immediately restore the login,
-    ask Supabase for the actual current user.
-  */
-
-  if (!currentUser) {
-    try {
-      const {
-        data: { user },
-        error: userError,
-      } = await window.supabaseClient.auth.getUser();
-
-      if (userError) {
-        console.error("GET USER ERROR:", userError);
-      }
-
-      if (user) {
-        currentUser = user;
-      }
-    } catch (err) {
-      console.error("GET USER CRASH:", err);
-    }
-  }
-
-  /*
-    If there is genuinely no logged-in user, show a
-    message and login button instead of repeatedly
-    redirecting/reloading the page.
-  */
-
-  if (!currentUser) {
-    console.warn("No active login session found.");
-
-    const main = document.querySelector("main");
-
-    if (main) {
-      main.innerHTML = `
-        <section
-          class="card"
-          style="
-            max-width: 720px;
-            margin: 2rem auto;
-            text-align: center;
-          "
-        >
-          <h1>Login Required</h1>
-
-          <p class="lead">
-            Your login session could not be found.
-          </p>
-
-          <p>
-            Log back in to view the current cruise.
-          </p>
+        <div class="notification-wrap">
+          <button
+            id="notification-bell"
+            class="notification-bell"
+            type="button"
+            aria-label="Notifications"
+          >
+            🔔
+            <span
+              id="notification-count"
+              class="notification-count hidden"
+            >
+              0
+            </span>
+          </button>
 
           <div
-            class="button-row"
-            style="
-              justify-content: center;
-              margin-top: 1.5rem;
-            "
+            id="notification-panel"
+            class="notification-panel hidden"
           >
-            <a
-              class="btn btn-primary"
-              href="login.html"
+            <div class="notification-panel-header">
+              <strong>Notifications</strong>
+            </div>
+
+            <div
+              id="notification-list"
+              class="notification-list"
             >
-              Go to Login
-            </a>
+              <p class="small-text">
+                Loading notifications...
+              </p>
+            </div>
           </div>
-        </section>
-      `;
-    }
+        </div>
 
-    return;
-  }
+        <button
+          id="logout-btn"
+          class="btn btn-primary"
+        >
+          Log Out
+        </button>
 
-  const user = currentUser;
+      </div>
+    </div>
+  </header>
 
-  console.log(
-    "CURRENT BOOKED USER:",
-    user.id,
-    user.email
-  );
 
-  /*
-    --------------------------------------------------
-    NOTIFICATIONS
-    --------------------------------------------------
-  */
+  <main class="container page-space">
 
-  if (typeof window.setupNotifications === "function") {
-    try {
-      await window.setupNotifications(user.id);
-    } catch (err) {
-      console.error(
-        "NOTIFICATION SETUP ERROR:",
-        err
-      );
-    }
-  }
+    <section class="card hero-card">
 
-  /*
-    --------------------------------------------------
-    LOGOUT
-    --------------------------------------------------
-  */
+      <span class="pill">
+        🚢 Currently Booked
+      </span>
 
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", async () => {
-      try {
-        await window.supabaseClient.auth.signOut();
-      } catch (err) {
-        console.error("LOGOUT ERROR:", err);
-      }
+      <h1>
+        Norwegian Jewel | 10-Day Caribbean
+      </h1>
 
-      window.location.href = "login.html";
-    });
-  }
+      <p class="lead">
+        January 3–13, 2028 • Round-trip Miami
+      </p>
 
-  /*
-    --------------------------------------------------
-    EXISTING RESERVATION REQUEST
-    --------------------------------------------------
-  */
+      <p>
+        This is the current group cruise. Use this page to check out
+        the itinerary, ship, restaurants, nightlife, included perks,
+        and group planning details.
+      </p>
 
-  async function checkExistingReservationRequest() {
-    if (!requestBtn || !requestMessage) {
-      return;
-    }
+      <div class="info-grid">
 
-    try {
-      const {
-        data,
-        error,
-      } = await window.supabaseClient
-        .from("reservation_requests")
-        .select(`
-          id,
-          status,
-          note,
-          created_at
-        `)
-        .eq("user_id", user.id)
-        .order("created_at", {
-          ascending: false,
-        })
-        .limit(1);
+        <div class="mini-card">
+          <h3>Ship</h3>
+          <p>Norwegian Jewel</p>
+        </div>
 
-      if (error) {
-        console.error(
-          "RESERVATION REQUEST LOAD ERROR:",
-          error
-        );
+        <div class="mini-card">
+          <h3>Dates</h3>
+          <p>Jan 3–13, 2028</p>
+        </div>
 
-        /*
-          Don't break the page if the table/policy
-          isn't ready yet.
-        */
+        <div class="mini-card">
+          <h3>Length</h3>
+          <p>10 Nights</p>
+        </div>
 
-        requestMessage.textContent =
-          "Reservation request feature is temporarily unavailable.";
+        <div class="mini-card">
+          <h3>Embark</h3>
+          <p>Miami, Florida</p>
+        </div>
 
-        return;
-      }
+        <div class="mini-card">
+          <h3>Current Booked Price</h3>
+          <p>$3,668 for 2</p>
+        </div>
 
-      if (!data || data.length === 0) {
-        requestBtn.disabled = false;
+        <div class="mini-card">
+          <h3>Approx. Per Person</h3>
+          <p>$1,834</p>
+        </div>
 
-        requestBtn.textContent =
-          "Request Group Reservation Info";
+      </div>
 
-        return;
-      }
+      <p class="small-text">
+        This reflects the current group booking. New bookings may
+        price differently depending on promotions, room selection,
+        and availability.
+      </p>
 
-      const latestRequest = data[0];
+      <div
+        class="button-row"
+        style="
+          margin-top: 1.5rem;
+          justify-content: center;
+          flex-wrap: wrap;
+        "
+      >
 
-      if (latestRequest.status === "pending") {
-        requestBtn.disabled = true;
+        <a
+          class="btn btn-primary"
+          href="https://www.ncl.com/vacations?ships=Norwegian_Jewel&date=jan-2028"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Check Current Price &amp; Book
+        </a>
 
-        requestBtn.textContent =
-          "Request Pending";
+        <a
+          class="btn btn-secondary"
+          href="excursions.html"
+        >
+          View Excursions
+        </a>
 
-        requestMessage.textContent =
-          "Your request is waiting for an admin.";
-      }
+      </div>
 
-      else if (latestRequest.status === "approved") {
-        requestBtn.disabled = false;
+    </section>
 
-        requestBtn.textContent =
-          "Request Group Reservation Info";
 
-        requestMessage.textContent =
-          "Your previous request was approved. Contact an admin for the reservation information.";
-      }
+    <section
+      class="card"
+      style="
+        max-width: 820px;
+        margin: 1.5rem auto;
+      "
+    >
 
-      else if (latestRequest.status === "completed") {
-        requestBtn.disabled = false;
+      <span class="pill">
+        🛏️ Traveling Together
+      </span>
 
-        requestBtn.textContent =
-          "Request Group Reservation Info";
+      <h2>
+        Want Your Cabin Near the Group?
+      </h2>
 
-        requestMessage.textContent =
-          "Your previous reservation request was completed.";
-      }
+      <p>
+        Already booked this cruise? Request the group's reservation
+        information so you can contact Norwegian Cruise Line and let
+        them know you're traveling with the group.
+      </p>
 
-      else if (latestRequest.status === "declined") {
-        requestBtn.disabled = false;
+      <p class="small-text">
+        This does not guarantee nearby cabins. Final room placement
+        and availability are controlled by Norwegian Cruise Line.
+      </p>
 
-        requestBtn.textContent =
-          "Request Group Reservation Info";
+      <label for="reservation-request-note">
+        Who are you hoping to be near?
+      </label>
 
-        requestMessage.textContent =
-          "Your previous request was declined. You may submit another request.";
-      }
-    } catch (err) {
-      console.error(
-        "RESERVATION REQUEST CHECK CRASH:",
-        err
-      );
+      <textarea
+        id="reservation-request-note"
+        rows="3"
+        placeholder="Example: We'd like our room near Daniel and Jonathan if possible."
+      ></textarea>
 
-      requestMessage.textContent =
-        "Reservation request feature is temporarily unavailable.";
-    }
-  }
+      <div
+        class="button-row"
+        style="margin-top: 1rem;"
+      >
+        <button
+          id="reservation-request-btn"
+          class="btn btn-primary"
+          type="button"
+        >
+          Request Group Reservation Info
+        </button>
+      </div>
 
-  /*
-    --------------------------------------------------
-    CREATE RESERVATION REQUEST
-    --------------------------------------------------
-  */
+      <p
+        id="reservation-request-message"
+        class="message"
+      ></p>
 
-  if (requestBtn) {
-    requestBtn.addEventListener("click", async () => {
-      requestBtn.disabled = true;
+    </section>
 
-      requestMessage.textContent =
-        "Sending request...";
 
-      const note =
-        requestNote?.value?.trim() || "";
+    <section class="card">
 
-      try {
-        /*
-          Load member name for notification
-        */
+      <div class="tab-row">
 
-        const {
-          data: profile,
-          error: profileError,
-        } = await window.supabaseClient
-          .from("profiles")
-          .select(`
-            display_name,
-            email
-          `)
-          .eq("id", user.id)
-          .single();
+        <button
+          class="tab-btn active"
+          data-tab="tab-overview"
+          type="button"
+        >
+          Overview
+        </button>
 
-        if (profileError) {
-          console.error(
-            "PROFILE LOAD ERROR:",
-            profileError
-          );
-        }
+        <button
+          class="tab-btn"
+          data-tab="tab-itinerary"
+          type="button"
+        >
+          Itinerary
+        </button>
 
-        /*
-          Insert request
-        */
+        <button
+          class="tab-btn"
+          data-tab="tab-food"
+          type="button"
+        >
+          Restaurants
+        </button>
 
-        const {
-          error: insertError,
-        } = await window.supabaseClient
-          .from("reservation_requests")
-          .insert({
-            user_id: user.id,
-            note: note || null,
-            status: "pending",
-          });
+        <button
+          class="tab-btn"
+          data-tab="tab-bars"
+          type="button"
+        >
+          Bars &amp; Nightlife
+        </button>
 
-        if (insertError) {
-          console.error(
-            "RESERVATION REQUEST INSERT ERROR:",
-            insertError
-          );
+        <button
+          class="tab-btn"
+          data-tab="tab-links"
+          type="button"
+        >
+          Official Links
+        </button>
 
-          if (insertError.code === "23505") {
-            requestBtn.disabled = true;
+      </div>
 
-            requestBtn.textContent =
-              "Request Pending";
 
-            requestMessage.textContent =
-              "You already have a pending reservation request.";
-          } else {
-            requestBtn.disabled = false;
+      <div
+        id="tab-overview"
+        class="tab-panel active"
+      >
 
-            requestMessage.textContent =
-              `Could not send request: ${insertError.message}`;
-          }
+        <h2>Norwegian Jewel</h2>
 
-          return;
-        }
+        <p>
+          Norwegian Jewel is one of Norwegian Cruise Line's
+          Jewel-class ships.
+        </p>
 
-        /*
-          Create notification
-        */
+        <p>
+          This sailing visits the Bahamas, Dominican Republic,
+          Aruba, Curaçao, Jamaica, and Grand Cayman.
+        </p>
 
-        const person =
-          profile?.display_name ||
-          profile?.email ||
-          user.email ||
-          "A member";
+        <p>
+          There are three sea days built into the itinerary,
+          giving the group plenty of time to enjoy the ship
+          between ports.
+        </p>
 
-        if (
-          typeof window.createNotification ===
-          "function"
-        ) {
-          try {
-            await window.createNotification({
-              type: "reservation_request",
+        <div class="info-grid">
 
-              title:
-                "Reservation Info Requested",
+          <div class="mini-card">
+            <h3>Class</h3>
+            <p>Jewel Class</p>
+          </div>
 
-              message:
-                `${person} requested the group reservation information.` +
-                `${note ? ` Note: ${note}` : ""}`,
-            });
-          } catch (notificationError) {
-            console.error(
-              "RESERVATION NOTIFICATION ERROR:",
-              notificationError
-            );
-          }
-        }
+          <div class="mini-card">
+            <h3>Guests</h3>
+            <p>2,368</p>
+          </div>
 
-        requestBtn.disabled = true;
+          <div class="mini-card">
+            <h3>Crew</h3>
+            <p>1,069</p>
+          </div>
 
-        requestBtn.textContent =
-          "Request Pending";
+          <div class="mini-card">
+            <h3>Route</h3>
+            <p>Caribbean</p>
+          </div>
 
-        requestMessage.textContent =
-          "Request sent! An admin can now review it.";
-      } catch (err) {
-        console.error(
-          "RESERVATION REQUEST CRASH:",
-          err
-        );
+        </div>
 
-        requestBtn.disabled = false;
+        <h3 class="section-heading">
+          Included With the Current Booking
+        </h3>
 
-        requestMessage.textContent =
-          "Could not send the request.";
-      }
-    });
-  }
+        <div class="info-grid">
 
-  /*
-    --------------------------------------------------
-    LOAD REQUEST STATUS
-    --------------------------------------------------
-  */
+          <div class="mini-card">
+            <h3>🍹 Unlimited Open Bar</h3>
+            <p>
+              Unlimited Open Bar package included for both guests.
+            </p>
+          </div>
 
-  await checkExistingReservationRequest();
-});
+          <div class="mini-card">
+            <h3>🍽️ Specialty Dining</h3>
+            <p>
+              4 specialty dining meals included per guest.
+            </p>
+          </div>
+
+          <div class="mini-card">
+            <h3>📶 Wi-Fi</h3>
+            <p>
+              150 minutes of Wi-Fi included per guest.
+            </p>
+          </div>
+
+          <div class="mini-card">
+            <h3>🏝️ Shore Excursion Credit</h3>
+            <p>
+              Shore excursion promotional credit included with
+              the current reservation.
+            </p>
+          </div>
+
+          <div class="mini-card">
+            <h3>💵 Prepaid Service Charges</h3>
+            <p>
+              Prepaid service charges are included in the current
+              booking.
+            </p>
+          </div>
+
+        </div>
+
+        <div class="ship-image-grid">
+
+          <img
+            src="https://www.ncl.com/sites/default/files/styles/870x485/public/2023-08/Jewel-Ship-Hero-Desktop.jpg"
+            alt="Norwegian Jewel exterior"
+            onerror="this.style.display='none'"
+          />
+
+          <img
+            src="https://www.ncl.com/sites/default/files/styles/870x485/public/2023-07/Jewel_Cagneys_700x475.jpg"
+            alt="Cagney's Steakhouse"
+            onerror="this.style.display='none'"
+          />
+
+        </div>
+
+      </div>
+
+
+      <div
+        id="tab-itinerary"
+        class="tab-panel"
+      >
+
+        <h2>
+          January 3–13, 2028 Itinerary
+        </h2>
+
+        <div class="table-wrap">
+
+          <table class="pretty-table">
+
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Port</th>
+                <th>Arrive</th>
+                <th>Depart</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              <tr>
+                <td>Mon, Jan 3</td>
+                <td>Miami, Florida</td>
+                <td>---</td>
+                <td>4:00 PM</td>
+              </tr>
+
+              <tr>
+                <td>Tue, Jan 4</td>
+                <td>Great Stirrup Cay, Bahamas</td>
+                <td>7:00 AM</td>
+                <td>3:00 PM</td>
+              </tr>
+
+              <tr>
+                <td>Wed, Jan 5</td>
+                <td>At Sea</td>
+                <td>---</td>
+                <td>---</td>
+              </tr>
+
+              <tr>
+                <td>Thu, Jan 6</td>
+                <td>Cabo Rojo, Dominican Republic</td>
+                <td>9:00 AM</td>
+                <td>4:00 PM</td>
+              </tr>
+
+              <tr>
+                <td>Fri, Jan 7</td>
+                <td>Oranjestad, Aruba</td>
+                <td>11:00 AM</td>
+                <td>8:00 PM</td>
+              </tr>
+
+              <tr>
+                <td>Sat, Jan 8</td>
+                <td>Willemstad, Curaçao</td>
+                <td>7:00 AM</td>
+                <td>7:00 PM</td>
+              </tr>
+
+              <tr>
+                <td>Sun, Jan 9</td>
+                <td>At Sea</td>
+                <td>---</td>
+                <td>---</td>
+              </tr>
+
+              <tr>
+                <td>Mon, Jan 10</td>
+                <td>Falmouth, Jamaica</td>
+                <td>7:00 AM</td>
+                <td>5:00 PM</td>
+              </tr>
+
+              <tr>
+                <td>Tue, Jan 11</td>
+                <td>George Town, Grand Cayman</td>
+                <td>7:00 AM</td>
+                <td>5:00 PM</td>
+              </tr>
+
+              <tr>
+                <td>Wed, Jan 12</td>
+                <td>At Sea</td>
+                <td>---</td>
+                <td>---</td>
+              </tr>
+
+              <tr>
+                <td>Thu, Jan 13</td>
+                <td>Miami, Florida</td>
+                <td>7:00 AM</td>
+                <td>---</td>
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+        <div class="ship-image-grid">
+
+          <img
+            src="images/route-map.png"
+            alt="Norwegian Jewel Caribbean cruise route map"
+          />
+
+        </div>
+
+      </div>
+
+
+      <div
+        id="tab-food"
+        class="tab-panel"
+      >
+
+        <h2>
+          Restaurants Worth Getting Excited About
+        </h2>
+
+        <p class="lead">
+          Ten nights means plenty of time to work through the ship's
+          food options.
+        </p>
+
+        <h3 class="section-heading">
+          Complimentary Dining
+        </h3>
+
+        <div class="info-grid">
+
+          <div class="mini-card">
+            <h3>O'Sheehan's</h3>
+            <p>Pub-style comfort food.</p>
+          </div>
+
+          <div class="mini-card">
+            <h3>Garden Café</h3>
+            <p>Buffet for breakfast, lunch, and dinner.</p>
+          </div>
+
+          <div class="mini-card">
+            <h3>Azura</h3>
+            <p>Complimentary main dining.</p>
+          </div>
+
+          <div class="mini-card">
+            <h3>Tsar's Palace</h3>
+            <p>Complimentary main dining.</p>
+          </div>
+
+          <div class="mini-card">
+            <h3>The Great Outdoors</h3>
+            <p>Outdoor buffet and grill.</p>
+          </div>
+
+          <div class="mini-card">
+            <h3>Topsiders Bar &amp; Grill</h3>
+            <p>Poolside dining.</p>
+          </div>
+
+        </div>
+
+        <h3 class="section-heading">
+          Specialty Dining
+        </h3>
+
+        <p>
+          The current booking includes
+          <strong>4 specialty dining meals per guest</strong>.
+        </p>
+
+        <div class="info-grid">
+
+          <div class="mini-card">
+            <h3>Cagney's Steakhouse</h3>
+            <p>Premium steakhouse.</p>
+          </div>
+
+          <div class="mini-card">
+            <h3>Teppanyaki</h3>
+            <p>Hibachi-style shared-table dining.</p>
+          </div>
+
+          <div class="mini-card">
+            <h3>La Cucina</h3>
+            <p>Italian dining.</p>
+          </div>
+
+          <div class="mini-card">
+            <h3>Le Bistro</h3>
+            <p>French dining.</p>
+          </div>
+
+          <div class="mini-card">
+            <h3>Chin Chin</h3>
+            <p>Asian-inspired dining.</p>
+          </div>
+
+          <div class="mini-card">
+            <h3>Moderno Churrascaria</h3>
+            <p>Brazilian steakhouse.</p>
+          </div>
+
+          <div class="mini-card">
+            <h3>Sushi</h3>
+            <p>Japanese-inspired sushi.</p>
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div
+        id="tab-bars"
+        class="tab-panel"
+      >
+
+        <h2>
+          Bars, Drinks &amp; Nightlife
+        </h2>
+
+        <p>
+          The current booking includes the Unlimited Open Bar package.
+        </p>
+
+        <div class="info-grid">
+
+          <div class="mini-card">
+            <h3>Bliss Ultra Lounge</h3>
+            <p>Music, dancing, and late-night hangouts.</p>
+          </div>
+
+          <div class="mini-card">
+            <h3>Magnum's Champagne &amp; Wine Bar</h3>
+            <p>Wine and champagne.</p>
+          </div>
+
+          <div class="mini-card">
+            <h3>Maltings Beer &amp; Whiskey Bar</h3>
+            <p>Beer and whiskey lounge.</p>
+          </div>
+
+          <div class="mini-card">
+            <h3>Pool Bars</h3>
+            <p>Drinks during pool and sea days.</p>
+          </div>
+
+          <div class="mini-card">
+            <h3>Spinnaker Lounge</h3>
+            <p>Ocean views and group hangout space.</p>
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div
+        id="tab-links"
+        class="tab-panel"
+      >
+
+        <h2>
+          Official Norwegian Cruise Line Links
+        </h2>
+
+        <div class="link-list">
+
+          <a
+            class="link-card"
+            href="https://www.ncl.com/vacations?ships=Norwegian_Jewel&date=jan-2028"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <strong>
+              Check Current Price &amp; Book
+            </strong>
+            <span>
+              Search Norwegian Jewel January 2028 sailings.
+            </span>
+          </a>
+
+          <a
+            class="link-card"
+            href="https://www.ncl.com/cruise-ships/norwegian-jewel"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <strong>
+              Norwegian Jewel Ship Page
+            </strong>
+            <span>
+              Ship information, photos, and onboard details.
+            </span>
+          </a>
+
+          <a
+            class="link-card"
+            href="https://www.ncl.com/cruise-ships/norwegian-jewel/whats-on-board/specialty-dining"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <strong>
+              Dining on Norwegian Jewel
+            </strong>
+            <span>
+              Complimentary and specialty dining information.
+            </span>
+          </a>
+
+          <a
+            class="link-card"
+            href="https://www.ncl.com/cruise-ships/norwegian-jewel/whats-on-board/bars-and-lounges"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <strong>
+              Bars &amp; Lounges
+            </strong>
+            <span>
+              Nightlife, drinks, lounges, and hangouts.
+            </span>
+          </a>
+
+          <a
+            class="link-card"
+            href="https://www.ncl.com/cruise-ships/norwegian-jewel/deck-plans"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <strong>
+              Deck Plans
+            </strong>
+            <span>
+              View the Norwegian Jewel layout.
+            </span>
+          </a>
+
+          <a
+            class="link-card"
+            href="https://www.ncl.com/sites/default/files/norwegian_jewel_ship_map_guide_06_13_25.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <strong>
+              Official Ship Map Guide PDF
+            </strong>
+            <span>
+              Quick visual guide to the ship.
+            </span>
+          </a>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <script src="js/supabase-client.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/current-booked.js"></script>
+
+</body>
+</html>
